@@ -472,6 +472,10 @@
             background: #f8fafc;
         }
         .qr-section img { width: 140px; border-radius: 8px; }
+        .date-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; }
+        .date-pair .input-group { min-width:0; margin-bottom:15px; }
+        .date-pair label { white-space:nowrap; }
+        .date-pair input[type="date"] { width:100%; min-width:0; max-width:100%; box-sizing:border-box; height:46px; padding:0 8px; font-size:0.82rem; -webkit-appearance:none; appearance:none; display:block; }
         .upi-app-link { display:inline-block; font-size:0.74rem; font-weight:800; color:#0369a1; margin-top:4px; text-decoration:underline; }
 
         /* ===== SEAT GRID ===== */
@@ -3548,7 +3552,7 @@
                     <div class="error-msg" id="err-shift-select">Please select a shift plan</div>
                 </div>
                 <button onclick="proceedToSeats()" id="proceedBtn" style="background:var(--selected);">Proceed to Seat Selection →</button>
-                <button type="button" onclick="openCheckSeatAvailabilityModal()" style="background:#0ea5e9; margin-top:8px;">🔍 Check Seat Availability</button>
+                <button type="button" id="csa-admin-btn" onclick="openCheckSeatAvailabilityModal()" style="background:#0ea5e9; margin-top:8px;">🔍 Check Seat Availability</button>
             </div>
 
             <div id="seat-selection-step" style="display:none;">
@@ -3630,7 +3634,7 @@
                 <input type="text" id="searchInput" onkeyup="renderHistory()" placeholder="🔍 Search by Name, Reg No or Mobile...">
                 <div class="filter-tabs">
                     <div class="filter-tab active" onclick="setHistoryFilter('all', this)">All</div>
-                    <div class="filter-tab" id="hist-newreg-tab" onclick="setHistoryFilter('newreg', this)">🆕 New Registrations<span id="hist-newreg-count" style="display:none;margin-left:5px;background:#dc2626;color:#fff;border-radius:20px;padding:1px 7px;font-size:0.62rem;font-weight:800;"></span></div>
+                    <div class="filter-tab" id="hist-newreg-tab" onclick="setHistoryFilter('newreg', this)">New Registrations<span id="hist-newreg-count" style="display:none;margin-left:5px;background:#dc2626;color:#fff;border-radius:20px;padding:1px 7px;font-size:0.62rem;font-weight:800;"></span></div>
                     <div class="filter-tab" onclick="setHistoryFilter('paid', this)">Paid</div>
                     <div class="filter-tab" onclick="setHistoryFilter('pending', this)">Pending</div>
                     <div class="filter-tab" onclick="setHistoryFilter('demo', this)">Demo</div>
@@ -13389,7 +13393,7 @@ function subAskAutoRenew(req, cb){
     function editRecord(id) {
         const s = students.find(x => x.id === id);
         switchTab('booking-sec', document.querySelectorAll('#admin-bottom-nav .nav-item')[1]);
-        document.getElementById('editId').value = s.id; document.getElementById('name').value = s.name;
+        document.getElementById('editId').value = s.id; { const _cb = document.getElementById('csa-admin-btn'); if (_cb) _cb.style.display = 'none'; } document.getElementById('name').value = s.name;
         document.getElementById('fname').value = s.fname; document.getElementById('mobile').value = s.mobile;
         document.getElementById('email').value = s.email; document.getElementById('shift').value = s.shift;
         document.getElementById('dob').value = s.dob || '';
@@ -13765,7 +13769,7 @@ function subAskAutoRenew(req, cb){
         document.querySelectorAll('#booking-sec input').forEach(i => { i.value=''; i.readOnly=false; });
         document.querySelectorAll('#booking-sec select').forEach(s => s.disabled=false);
         document.getElementById('otherAppName').readOnly = false;
-        document.getElementById('editId').value = ''; photoData = null; selectedSeat = null;
+        document.getElementById('editId').value = ''; { const _cb = document.getElementById('csa-admin-btn'); if (_cb) _cb.style.display = ''; } photoData = null; selectedSeat = null;
         document.getElementById('shift').value = ""; document.getElementById('payMethod').value = "Cash";
         document.getElementById('photo-preview-img').style.display = "none";
         document.getElementById('cancelEditBtn').style.display = "none";
@@ -19105,12 +19109,12 @@ The **Library Lost & Found service is provided free of charge**. The Library doe
         </div>
         <div style="padding:20px; text-align:left;">
             <p style="font-size:0.78rem; color:var(--grey); margin:0 0 16px; line-height:1.5;">During the selected days, <strong>no student</strong> in this library will be marked Present or Absent — even if they try to check in. This only switches attendance off; it does not post anything to students (use Notices &amp; Alerts for that).</p>
-            <div style="display:flex; gap:10px;">
-                <div class="input-group" style="flex:1;">
+            <div class="date-pair">
+                <div class="input-group">
                     <label>From Date</label>
                     <input type="date" id="gda-from">
                 </div>
-                <div class="input-group" style="flex:1;">
+                <div class="input-group">
                     <label>To Date</label>
                     <input type="date" id="gda-to">
                 </div>
@@ -19141,12 +19145,12 @@ The **Library Lost & Found service is provided free of charge**. The Library doe
                 <div id="da-student-name" style="padding:10px 12px; background:#f1f5f9; border-radius:8px; font-weight:800; font-size:0.85rem;"></div>
             </div>
             <p style="font-size:0.78rem; color:var(--grey); margin:0 0 16px; line-height:1.5;">During the selected days, this student's attendance won't be marked — neither Present nor Absent — even if they try to check in.</p>
-            <div style="display:flex; gap:10px;">
-                <div class="input-group" style="flex:1;">
+            <div class="date-pair">
+                <div class="input-group">
                     <label>From Date</label>
                     <input type="date" id="da-from">
                 </div>
-                <div class="input-group" style="flex:1;">
+                <div class="input-group">
                     <label>To Date</label>
                     <input type="date" id="da-to">
                 </div>
