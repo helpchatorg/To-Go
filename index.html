@@ -18922,16 +18922,28 @@ The **Library Lost & Found service is provided free of charge**. The Library doe
 </div>
 
 <div id="sa-access-request-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(6px); z-index:99998; padding:20px; box-sizing:border-box; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:18px; max-width:380px; width:100%; padding:26px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-        <div style="font-size:2.2rem; margin-bottom:10px;">🔐</div>
-        <h3 style="margin:0 0 10px; font-size:1.05rem;">Super Admin Access Request</h3>
-        <p style="font-size:0.85rem; color:#475569; margin:0 0 10px; line-height:1.5;">Someone from the Super Admin Control Center is requesting access to your account — usually for support or bug-fixing.</p>
-        <p style="font-size:0.72rem; color:#94a3b8; margin:0 0 4px;">Request ID: <span id="sa-req-token" style="font-weight:800; color:#475569;"></span></p>
-        <p style="font-size:0.82rem; font-weight:800; color:#0369a1; margin:0 0 6px;">⏱️ Requested access time: <span id="sa-req-minutes">30</span> minutes</p>
-        <p style="font-size:0.82rem; font-weight:800; color:#dc2626; margin:0 0 20px;">Expires in <span id="sa-req-countdown">10:00</span></p>
-        <div style="display:flex; gap:10px;">
-            <button onclick="respondToSaAccessRequest(false)" style="flex:1; background:#fee2e2; color:#991b1b; padding:13px; border-radius:10px; font-weight:800; font-size:0.85rem; border:none; cursor:pointer;">❌ Reject</button>
-            <button onclick="respondToSaAccessRequest(true)" style="flex:1; background:#16a34a; color:#fff; padding:13px; border-radius:10px; font-weight:800; font-size:0.85rem; border:none; cursor:pointer;">✅ Accept</button>
+    <div style="background:#fff; border-radius:22px; max-width:390px; width:100%; overflow:hidden; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.35);">
+        <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed); padding:24px 20px 20px; color:#fff;">
+            <div style="width:56px; height:56px; margin:0 auto 10px; border-radius:18px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">🔐</div>
+            <h3 style="margin:0; font-size:1.05rem; color:#fff;">Super Admin Access Request</h3>
+            <div style="font-size:0.7rem; opacity:.85; margin-top:4px;">Request ID: <span id="sa-req-token" style="font-weight:800;"></span></div>
+        </div>
+        <div style="padding:20px;">
+            <p style="font-size:0.82rem; color:#475569; margin:0 0 14px; line-height:1.55;">Someone from the Super Admin Control Center wants to access your account — usually for support or bug-fixing.</p>
+            <div style="display:flex; gap:10px; margin-bottom:16px;">
+                <div style="flex:1; background:#eef2ff; border:1.5px solid #c7d2fe; border-radius:14px; padding:10px 6px;">
+                    <div style="font-size:0.62rem; font-weight:800; color:#6366f1; text-transform:uppercase; letter-spacing:.05em;">Access time</div>
+                    <div style="font-size:1.25rem; font-weight:800; color:#3730a3;"><span id="sa-req-minutes">30</span><span style="font-size:0.7rem; font-weight:700;"> min</span></div>
+                </div>
+                <div style="flex:1; background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:10px 6px;">
+                    <div style="font-size:0.62rem; font-weight:800; color:#dc2626; text-transform:uppercase; letter-spacing:.05em;">Expires in</div>
+                    <div style="font-size:1.25rem; font-weight:800; color:#b91c1c;" id="sa-req-countdown">10:00</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="respondToSaAccessRequest(false)" style="flex:1; background:#fee2e2; color:#991b1b; padding:13px; border-radius:12px; font-weight:800; font-size:0.85rem; border:none; cursor:pointer; margin:0;">❌ Reject</button>
+                <button onclick="respondToSaAccessRequest(true)" style="flex:1; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; padding:13px; border-radius:12px; font-weight:800; font-size:0.85rem; border:none; cursor:pointer; margin:0;">✅ Accept</button>
+            </div>
         </div>
     </div>
 </div>
