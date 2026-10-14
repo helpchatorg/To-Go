@@ -12450,7 +12450,7 @@ function openWalletEkycCooldownModal() {
         const directCharges = (wallet.transactions || []).filter(t => t.isSuperAdminCharge && t.chargeType === 'renewal');
         const CHARGE_ICONS = { maintenance: '🔧', penalty: '⚠️', renewal: '🔄' };
         const CHARGE_LABELS = { maintenance: 'Annual Maintenance Charge', penalty: 'Penalty', renewal: 'Subscription Renewal Charge' };
-        const pastCombined = past.map(rq => ({ date: rq.decidedAt || rq.requestedAt, amount: rq.amount, type: 'renewal', status: rq.status, decisionReason: rq.decisionReason, payMode: rq.payMode, note: (rq.acceptedBy ? 'Accepted by ' + rq.acceptedBy + '. ' : '') + (rq.note || '') }))
+        const pastCombined = past.map(rq => ({ date: rq.decidedAt || rq.requestedAt, amount: rq.amount, type: 'renewal', status: rq.status, decisionReason: rq.decisionReason, payMode: rq.payMode, disc: (rq.plan && rq.plan.discPct) ? ('🏷️ ' + rq.plan.discName + ' — ' + rq.plan.discPct + '% off (₹' + rq.plan.listPrice + ' → ₹' + rq.amount + ')') : '', note: (rq.acceptedBy ? 'Accepted by ' + rq.acceptedBy + '. ' : '') + (rq.note || '') }))
             .concat(subDedupeDirect(wallet, directCharges.map(t => ({ date: t.date, amount: t.amount, type: t.chargeType, status: 'Deducted', decisionReason: null, note: t.note }))))
             .sort((a, b) => new Date(b.date) - new Date(a.date));
         if (pastCombined.length) {
@@ -12467,6 +12467,7 @@ function openWalletEkycCooldownModal() {
                         '<div class="content">' +
                             '<div class="title-line"><span class="name">' + (CHARGE_LABELS[rq.type] || 'Charge') + '</span><span class="amt" style="color:#dc2626;">-₹' + rq.amount + '</span></div>' +
                             '<div class="sub-line">' + fmtWalletDate(rq.date) + (rq.note ? ' • ' + rq.note : '') + '</div>' +
+                            (rq.disc ? '<div class="sub-line" style="color:#15803d;font-weight:800;">' + rq.disc + '</div>' : '') +
                             '<div class="status-line">' + statusHtml + '</div>' +
                             (rq.status === 'Rejected' && rq.decisionReason ? '<div class="reason-line">Reason: ' + rq.decisionReason + '</div>' : '') +
                         '</div>' +
@@ -12512,12 +12513,13 @@ function subCardHtml(sub, isAdmin, wallet){
         ? '<button type="button" role="switch" aria-checked="' + on + '" onclick="subToggleAuto()" style="flex-shrink:0;position:relative;width:48px;height:27px;border-radius:20px;border:none;padding:0;cursor:pointer;transition:background .25s;background:' + (on ? 'linear-gradient(135deg,#22c55e,#16a34a)' : '#cbd5e1') + ';box-shadow:inset 0 1px 3px rgba(0,0,0,.18);"><span style="position:absolute;top:3px;left:' + (on ? '24px' : '3px') + ';width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:left .25s;"></span></button>'
         : '<span style="flex-shrink:0;font-size:0.68rem;font-weight:800;padding:5px 13px;border-radius:20px;color:#fff;background:' + (on ? 'linear-gradient(135deg,#22c55e,#16a34a)' : '#94a3b8') + ';">' + (on ? 'ON' : 'OFF') + '</span>';
     const last = hist.length - 1;
-    const opts = hist.map((h, i) => ({ h, i })).reverse().map(x => '<option value="' + x.i + '" data-no="' + subInvNo(x.h, x.i) + '" data-txn="' + subEsc(subResolveTxn(wallet, x.h)) + '"' + (x.i === last ? ' selected' : '') + '>' + subInvNo(x.h, x.i) + ' • ' + subEsc(x.h.planName) + ' • ₹' + x.h.amount + ' • ' + subFmt(x.h.date) + (x.h.auto ? ' • Auto' : '') + '</option>').join('');
+    const opts = hist.map((h, i) => ({ h, i })).reverse().map(x => '<option value="' + x.i + '" data-no="' + subInvNo(x.h, x.i) + '" data-txn="' + subEsc(subResolveTxn(wallet, x.h)) + '"' + (x.i === last ? ' selected' : '') + '>' + subInvNo(x.h, x.i) + ' • ' + subEsc(x.h.planName) + ' • ₹' + x.h.amount + ' • ' + subFmt(x.h.date) + (x.h.auto ? ' • Auto' : '') + (x.h.discPct ? ' • ' + x.h.discPct + '% off' : '') + '</option>').join('');
     const upd = "var o=this.options[this.selectedIndex],p=this.parentNode;p.querySelector('.sub-inv-no').textContent=o.dataset.no;p.querySelector('.sub-inv-txn').textContent='Txn ID: '+o.dataset.txn;";
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;"><strong style="font-size:0.84rem;color:#0369a1;">💳 Subscription — ' + subEsc(sub.planName) + '</strong>' +
         '<span style="font-size:0.64rem;font-weight:800;color:#fff;background:' + st.color + ';padding:3px 10px;border-radius:20px;white-space:nowrap;">' + st.label + '</span></div>' +
         '<div style="font-size:0.74rem;font-weight:700;">Started: ' + subFmt(sub.startedAt) + ' &nbsp;•&nbsp; Next Renewal: ' + subFmt(sub.expiresAt) + '</div>' +
         '<div style="font-size:0.72rem;color:' + st.color + ';font-weight:800;margin-top:3px;">' + (st.days >= 0 ? st.days + ' day(s) left' : Math.abs(st.days) + ' day(s) ago (expired)') + '</div>' +
+        (hist.length && hist[last].discPct ? '<div style="margin-top:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:10px;padding:8px 11px;font-size:0.7rem;font-weight:800;line-height:1.5;">🏷️ Discount applied: ' + subEsc(hist[last].discName) + ' — <b>' + hist[last].discPct + '% off</b><br><span style="font-weight:700;">List price ₹' + hist[last].listPrice + ' → Paid ₹' + hist[last].amount + ' (saved ₹' + (Number(hist[last].listPrice) - Number(hist[last].amount)).toFixed(2).replace(/\.00$/, '') + ')' + (hist[last].payMode === 'Cash' ? ' · Paid in cash' : '') + '</span></div>' : (hist.length && hist[last].payMode === 'Cash' ? '<div style="margin-top:8px;font-size:0.7rem;font-weight:800;color:#92400e;">💵 Last payment: cash, received by Super Admin</div>' : '')) +
         '<div style="margin-top:10px;background:linear-gradient(135deg,#fff,#f0f9ff);border:1px solid ' + (on ? '#86efac' : '#bae6fd') + ';border-radius:14px;padding:11px 13px;">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><div style="font-size:0.8rem;font-weight:800;">🔁 Auto-Renewal: <span style="color:' + (on ? '#16a34a' : '#64748b') + ';">' + (on ? 'ON' : 'OFF') + '</span>' + (isAdmin ? '' : ' <span style="font-weight:600;color:#64748b;font-size:0.66rem;">(set by the Admin)</span>') + '</div>' + (isAdmin ? sw : '') + '</div>' +
             '<div style="font-size:0.68rem;color:#475569;line-height:1.55;margin-top:7px;">' + subAutoText(sub, isAdmin) + '</div></div>' +
@@ -16096,12 +16098,15 @@ function subAskAutoRenew(req, cb){
         if (!banner) {
             banner = document.createElement('div');
             banner.id = 'sa-impersonate-banner';
-            banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#7c2d12; color:#fff; padding:10px 14px; font-size:0.78rem; font-weight:800; z-index:99999; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; box-shadow:0 2px 10px rgba(0,0,0,0.2);';
+            banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#7c2d12; color:#fff; box-sizing:border-box; padding:7px 10px; font-size:0.74rem; font-weight:800; z-index:99999; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:nowrap; box-shadow:0 2px 10px rgba(0,0,0,0.2);';
             document.body.prepend(banner);
-            document.body.style.paddingTop = '46px';
+            document.body.style.paddingTop = '44px';
         }
-        banner.innerHTML = `🛡️ Super Admin Access Mode — operating as Admin ${adminId} (authorized by admin) · <span id="sa-banner-timer" style="font-family:'Courier New',monospace; background:rgba(255,255,255,.18); padding:2px 8px; border-radius:6px;">--:--</span> left
-                <button onclick="exitSuperAdminImpersonation('exit')" style="background:#fff; color:#7c2d12; padding:5px 12px; border-radius:6px; font-size:0.72rem; font-weight:800;">Exit</button>`;
+        banner.title = 'Super Admin Access Mode — operating as Admin ' + adminId + ' (authorized by admin)';
+        banner.innerHTML = `<span style="flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🛡️ Super Admin Mode · Admin ${adminId}</span>
+                <span id="sa-banner-timer" style="flex:0 0 auto; font-family:'Courier New',monospace; background:rgba(255,255,255,.2); padding:3px 8px; border-radius:6px; white-space:nowrap;">--:--</span>
+                <button onclick="exitSuperAdminImpersonation('exit')" style="flex:0 0 auto; width:auto; margin:0; background:#fff; color:#7c2d12; padding:5px 11px; border-radius:6px; font-size:0.7rem; font-weight:800;">Exit</button>`;
+        document.body.style.paddingTop = banner.offsetHeight + 'px';
         const updateText = () => {
             const msLeft = expiresAt - Date.now();
             if (msLeft <= 0) { exitSuperAdminImpersonation('expired'); return; }
