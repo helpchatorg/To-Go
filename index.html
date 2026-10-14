@@ -472,6 +472,7 @@
             background: #f8fafc;
         }
         .qr-section img { width: 140px; border-radius: 8px; }
+        .upi-app-link { display:inline-block; font-size:0.74rem; font-weight:800; color:#0369a1; margin-top:4px; text-decoration:underline; }
 
         /* ===== SEAT GRID ===== */
         .seat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 10px; margin-top: 15px; }
@@ -2199,6 +2200,7 @@
                 <div id="demo-qr-area" class="qr-section" style="margin-bottom:8px;">
                     <img id="demo-qr-img" src="" alt="QR">
                     <p id="demo-display-upi" style="font-size:0.75rem; color:var(--primary); margin-top:8px; font-weight:800;"></p>
+                    <a id="demo-upi-link" class="upi-app-link" href="#">📲 Pay with a UPI app on this phone</a>
                 </div>
             </div>
         </div>
@@ -2377,6 +2379,7 @@
                     <div id="feeQrArea" class="qr-section">
                         <img id="feeQrImg" src="" alt="QR">
                         <p id="feeDisplayUPI" style="font-size:0.75rem; color:var(--primary); margin-top:8px; font-weight:800;"></p>
+                        <a id="fee-upi-link" class="upi-app-link" href="#">📲 Pay with a UPI app on this phone</a>
                     </div>
                 </div>
                 <button id="btnFeeSubmit" onclick="saveNewMonthlyFee()" style="margin-top:10px; background:#10b981;">Deposit Fee</button>
@@ -3586,6 +3589,7 @@
                 <div id="qrArea" class="qr-section">
                     <img id="qrImg" src="" alt="QR">
                     <p id="displayUPI" style="font-size:0.75rem; color:var(--primary); margin-top:8px; font-weight:800;"></p>
+                    <a id="reg-upi-link" class="upi-app-link" href="#">📲 Pay with a UPI app on this phone</a>
                 </div>
                 <div id="walletPayArea" style="display:none; background:#fffbeb; border:1px solid #f59e0b; border-radius:10px; padding:14px; margin-bottom:15px;">
                     <div style="font-size:0.8rem; color:#92400e; font-weight:800;">💰 Current Wallet Balance: <span id="walletBalanceDisplay">₹0</span></div>
@@ -7176,7 +7180,22 @@
     // the same way the Super Admin Control Center already does. Runs once on load, after
     // loadFromLocal() has populated students/adminTickets/etc. If the saved session no longer
     // matches real data (e.g. the account was deleted), it's discarded and the login screen shows.
+    function showSaEndNote() {
+        let n = null;
+        try { n = JSON.parse(sessionStorage.getItem('Samarthak_SAEndNote') || 'null'); sessionStorage.removeItem('Samarthak_SAEndNote'); } catch (e) {}
+        if (!n) return;
+        const card = document.querySelector('#login-sec .login-card'); if (!card) return;
+        const box = document.createElement('div');
+        box.id = 'sa-end-note';
+        box.style.cssText = 'background:#fff7ed; border:1.5px solid #fdba74; color:#9a3412; border-radius:12px; padding:11px 13px; margin-bottom:14px; font-size:0.78rem; font-weight:700; line-height:1.5; display:flex; gap:10px; align-items:flex-start; text-align:left;';
+        const txt = n.reason === 'expired'
+            ? 'You were logged out automatically because the Super Admin access time' + (n.minutes ? ' (' + n.minutes + ' minutes)' : '') + ' has ended.'
+            : 'You left Super Admin access mode, so you were logged out.';
+        box.innerHTML = '<span>🔒 ' + txt + '</span><span onclick="this.parentNode.remove()" style="cursor:pointer; margin-left:auto; font-weight:800;">✕</span>';
+        card.insertBefore(box, card.firstChild);
+    }
     function restoreSessionFromStorage() {
+        showSaEndNote();
         // A verified Super Admin access grant (from the "Grant Super Admin Access" flow)
         // takes priority — it opens this admin's dashboard directly for support/bug-fixing.
         if (checkSuperAdminImpersonation()) {
@@ -9384,6 +9403,7 @@
                     const s = config.shifts.find(x => x.id === sid);
                     const link = `upi://pay?pa=${config.upi}&pn=${config.libName}&am=${s.price}&cu=INR`;
                     document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
+                    document.getElementById('reg-upi-link').href = link;
                     qrArea.style.display = 'block';
                 }
             } else if (method === "Wallet") {
@@ -9413,6 +9433,7 @@
                 if (config.upi && parseInt(amount) > 0) {
                     const link = `upi://pay?pa=${config.upi}&pn=${config.libName}&am=${amount}&cu=INR`;
                     document.getElementById('feeQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
+                    document.getElementById('fee-upi-link').href = link;
                     qrArea.style.display = 'block';
                 } else { qrArea.style.display = 'none'; }
             } else if (method === "Wallet") {
@@ -10082,6 +10103,7 @@
                 if (sInfo) {
                     const link = `upi://pay?pa=${config.upi}&pn=${config.libName}&am=${sInfo.price}&cu=INR`;
                     document.getElementById('demo-qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
+                    document.getElementById('demo-upi-link').href = link;
                     qrArea.style.display = 'block';
                 }
             }
@@ -15981,18 +16003,30 @@ function subAskAutoRenew(req, cb){
         }
         const updateText = () => {
             const msLeft = expiresAt - Date.now();
-            if (msLeft <= 0) { exitSuperAdminImpersonation(); return; }
-            const mins = Math.floor(msLeft / 60000);
+            if (msLeft <= 0) { exitSuperAdminImpersonation('expired'); return; }
+            if (msLeft <= 0) { exitSuperAdminImpersonation('expired'); return; }
+            const mins = Math.ceil(msLeft / 60000);
             banner.innerHTML = `🛡️ Super Admin Access Mode — operating as Admin ${adminId} (authorized by admin) · ${mins} min left
-                <button onclick="exitSuperAdminImpersonation()" style="background:#fff; color:#7c2d12; padding:5px 12px; border-radius:6px; font-size:0.72rem; font-weight:800;">Exit</button>`;
+                <button onclick="exitSuperAdminImpersonation('exit')" style="background:#fff; color:#7c2d12; padding:5px 12px; border-radius:6px; font-size:0.72rem; font-weight:800;">Exit</button>`;
         };
         updateText();
         if (_saBannerInterval) clearInterval(_saBannerInterval);
-        _saBannerInterval = setInterval(updateText, 30000);
+        _saBannerInterval = setInterval(updateText, 5000);
+        // Hard stop at the exact expiry moment (no popup, no confirmation).
+        if (_saForceTimer) clearTimeout(_saForceTimer);
+        _saForceTimer = setTimeout(() => exitSuperAdminImpersonation('expired'), Math.max(0, expiresAt - Date.now()) + 50);
     }
+    let _saForceTimer = null;
 
-    function exitSuperAdminImpersonation() {
+    function exitSuperAdminImpersonation(reason) {
         if (_saBannerInterval) { clearInterval(_saBannerInterval); _saBannerInterval = null; }
+        if (_saForceTimer) { clearTimeout(_saForceTimer); _saForceTimer = null; }
+        let _note = { reason: reason === 'expired' ? 'expired' : 'exit' };
+        try {
+            const g = JSON.parse(localStorage.getItem(SA_IMPERSONATE_KEY) || 'null');
+            if (g && g.grantedAt && g.expiresAt) _note.minutes = Math.round((g.expiresAt - g.grantedAt) / 60000);
+        } catch (e) {}
+        try { sessionStorage.setItem('Samarthak_SAEndNote', JSON.stringify(_note)); } catch (e) {}
         localStorage.removeItem(SA_IMPERSONATE_KEY);
         sessionStorage.removeItem('Samarthak_Session');
         const banner = document.getElementById('sa-impersonate-banner');
@@ -16050,6 +16084,7 @@ function subAskAutoRenew(req, cb){
         modal.dataset.tokenId = req.tokenId;
         modal.dataset.expiresAt = req.expiresAt;
         document.getElementById('sa-req-token').innerText = req.tokenId;
+        document.getElementById('sa-req-minutes').innerText = req.accessMinutes || 30;
         modal.style.display = 'flex';
         updateSaReqCountdown();
         if (_saReqModalInterval) clearInterval(_saReqModalInterval);
@@ -16091,8 +16126,11 @@ function subAskAutoRenew(req, cb){
         if (accept) {
             rec.status = 'accepted';
             rec.actionAt = now;
-            // Admin re-request cooldown and the Super Admin's access window are the same 30 minutes.
-            rec.cooldownUntil = now + 30 * 60 * 1000;
+            // Re-request cooldown and the Super Admin's access window are the same: the duration
+            // the Super Admin chose in the request (10-60 minutes, default 30).
+            const _mins = [10,20,30,40,50,60].includes(rec.accessMinutes) ? rec.accessMinutes : 30;
+            rec.accessMinutes = _mins;
+            rec.cooldownUntil = now + _mins * 60 * 1000;
             writeAccessRequests(list);
             localStorage.setItem(SA_IMPERSONATE_KEY, JSON.stringify({
                 adminId: rec.adminId, grantedAt: now, expiresAt: rec.cooldownUntil
@@ -16745,6 +16783,7 @@ function subAskAutoRenew(req, cb){
                         <div style="font-size:1.6rem;margin-bottom:6px;">🔐</div>
                         <div style="font-size:0.85rem;font-weight:800;color:#92400e;margin-bottom:4px;">Someone is requesting access to your account.</div>
                         <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:2px;">Request ID: <span style="font-weight:800;color:#475569;">${pending.tokenId}</span></div>
+                        <div style="font-size:0.78rem;font-weight:800;color:#0369a1;margin-bottom:2px;">⏱️ Requested access time: ${pending.accessMinutes || 30} minutes</div>
                         <div style="font-size:0.78rem;font-weight:800;color:#dc2626;margin-bottom:14px;">Expires in ${mins}:${secs.toString().padStart(2,'0')}</div>
                         <div style="display:flex; gap:10px;">
                             <button onclick="resolveSaAccessRequest('${pending.tokenId}', false)" style="flex:1; background:#fee2e2; color:#991b1b; padding:12px; border-radius:10px; font-weight:800; font-size:0.82rem; border:none; margin:0;">❌ Reject</button>
@@ -16767,7 +16806,7 @@ function subAskAutoRenew(req, cb){
             else badge = '<span class="type-tag" style="background:#f1f5f9;color:#475569;">Expired</span>';
             const dt = new Date(r.requestedAt).toLocaleString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
             return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:0.75rem;display:flex;justify-content:space-between;gap:10px;align-items:center;">
-                <div><div style="font-weight:800;font-family:'Courier New',monospace;">${r.tokenId}</div><div style="color:var(--grey);">${dt}</div></div>
+                <div><div style="font-weight:800;font-family:'Courier New',monospace;">${r.tokenId}</div><div style="color:var(--grey);">${dt} · ${r.accessMinutes || 30} min access</div></div>
                 ${badge}
             </div>`;
         }).join('');
@@ -18775,7 +18814,7 @@ The **Library Lost & Found service is provided free of charge**. The Library doe
                 </div>
                 <div class="sc-info-item">
                     <span class="sc-info-icon">⏱️</span>
-                    <span>Unanswered requests expire automatically after 10 minutes. Accepted access stays open for 30 minutes.</span>
+                    <span>Unanswered requests expire automatically after 10 minutes. Accepted access stays open only for the time chosen by the Super Admin (10 to 60 minutes), then the Super Admin is logged out automatically.</span>
                 </div>
             </div>
             <div style="font-size:0.72rem;color:var(--grey);font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Request History</div>
@@ -18884,6 +18923,7 @@ The **Library Lost & Found service is provided free of charge**. The Library doe
         <h3 style="margin:0 0 10px; font-size:1.05rem;">Super Admin Access Request</h3>
         <p style="font-size:0.85rem; color:#475569; margin:0 0 10px; line-height:1.5;">Someone from the Super Admin Control Center is requesting access to your account — usually for support or bug-fixing.</p>
         <p style="font-size:0.72rem; color:#94a3b8; margin:0 0 4px;">Request ID: <span id="sa-req-token" style="font-weight:800; color:#475569;"></span></p>
+        <p style="font-size:0.82rem; font-weight:800; color:#0369a1; margin:0 0 6px;">⏱️ Requested access time: <span id="sa-req-minutes">30</span> minutes</p>
         <p style="font-size:0.82rem; font-weight:800; color:#dc2626; margin:0 0 20px;">Expires in <span id="sa-req-countdown">10:00</span></p>
         <div style="display:flex; gap:10px;">
             <button onclick="respondToSaAccessRequest(false)" style="flex:1; background:#fee2e2; color:#991b1b; padding:13px; border-radius:10px; font-weight:800; font-size:0.85rem; border:none; cursor:pointer;">❌ Reject</button>
