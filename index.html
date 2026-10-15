@@ -2632,6 +2632,7 @@
                 <div class="r"><span class="ic">👤</span><span>Stay alone and visible in frame for the entire session — stepping away fails eKYC.</span></div>
                 <div class="r"><span class="ic">🚫</span><span>No other person should appear on screen at any point.</span></div>
                 <div class="r"><span class="ic">🔇</span><span>Keep your surroundings quiet — background noise or other voices will fail eKYC.</span></div>
+                <div class="r"><span class="ic">📵</span><span>Do not minimize the app or switch to another app — the video will stop and eKYC will fail.</span></div>
             </div>
             <div class="vekyc-sig-instructions" id="video-ekyc-id-instructions" style="display:none;">
                 <div class="r"><span class="ic">🪪</span><span>Hold up your <strong>Government ID document</strong> clearly, filling most of the frame.</span></div>
@@ -3358,10 +3359,6 @@
                             🔓 Access Requests <span class="admin-menu-notif-dot" id="admin-accessreq-notif-dot" style="display:none;"></span>
                         </div>
                         <div class="admin-dropdown-divider"></div>
-                        <div class="admin-dropdown-item" onclick="closeAdminMenu(); openExportBackupModal();">
-                            💾 Export &amp; Backup
-                        </div>
-                        <div class="admin-dropdown-divider"></div>
                         <div class="admin-dropdown-item" onclick="closeAdminMenu(); openAdminSubModal();">
                             💳 Subscription <span class="admin-menu-notif-dot" id="admin-sub-notif-dot" style="display:none;"></span>
                         </div>
@@ -3379,6 +3376,9 @@
                             <span class="admin-dropdown-caret" id="admin-setting-caret">▾</span>
                         </div>
                         <div class="admin-dropdown-submenu" id="admin-setting-submenu">
+                            <div class="admin-dropdown-subitem" onclick="closeAdminMenu(); openExportBackupModal();">
+                                💾 Export &amp; Backup
+                            </div>
                             <div class="admin-dropdown-subitem" onclick="openChangePassword()">
                                 🔑 Change Password
                             </div>
@@ -7174,8 +7174,8 @@
     }
     function forceLogoutDemoExpired(reason) {
         logoutAdmin();
-        const errDiv = document.getElementById('login-main-err');
-        if (errDiv) { errDiv.innerText = '⏳ ' + reason; errDiv.style.display = 'block'; }
+        const noWindow = /window set yet/i.test(reason || '');
+        showSaEndNote({ reason: 'demo', text: noWindow ? 'You were logged out automatically because no access time is set for this demo account. Please contact the Super Admin.' : 'You were logged out automatically because the demo account access time has ended.' });
     }
 
     window.onload = function() { migrateOldSharedDbIfNeeded(); loadLoginAttempts(); restoreSessionFromStorage(); setInterval(checkDemoExpiry, 60000); setInterval(checkAdminDemoExpiryLive, 5000); scheduleAutoInvalidate(); setInterval(checkForSaAccessRequest, 5000); setInterval(checkForStudentAccessRequest, 5000); checkLFAutoDispose(); setInterval(checkLFAutoDispose, 3600000); }
@@ -7184,15 +7184,17 @@
     // the same way the Super Admin Control Center already does. Runs once on load, after
     // loadFromLocal() has populated students/adminTickets/etc. If the saved session no longer
     // matches real data (e.g. the account was deleted), it's discarded and the login screen shows.
-    function showSaEndNote() {
-        let n = null;
-        try { n = JSON.parse(sessionStorage.getItem('Samarthak_SAEndNote') || 'null'); sessionStorage.removeItem('Samarthak_SAEndNote'); } catch (e) {}
+    function showSaEndNote(override) {
+        let n = override || null;
+        if (!n) { try { n = JSON.parse(sessionStorage.getItem('Samarthak_SAEndNote') || 'null'); sessionStorage.removeItem('Samarthak_SAEndNote'); } catch (e) {} }
         if (!n) return;
         const card = document.querySelector('#login-sec .login-card'); if (!card) return;
+        const old = document.getElementById('sa-end-note'); if (old) old.remove();
         const box = document.createElement('div');
         box.id = 'sa-end-note';
         box.style.cssText = 'box-sizing:border-box; width:100%; max-width:420px; background:#fff7ed; border:1.5px solid #fdba74; color:#9a3412; border-radius:16px; padding:13px 16px; margin:0 0 14px; font-size:0.8rem; font-weight:700; line-height:1.55; display:flex; gap:12px; align-items:flex-start; text-align:left; box-shadow:0 6px 18px rgba(154,52,18,0.12);';
-        const txt = n.reason === 'expired'
+        const txt = n.reason === 'demo' ? n.text
+            : n.reason === 'expired'
             ? 'You were logged out automatically because the Super Admin access time' + (n.minutes ? ' (' + n.minutes + ' minutes)' : '') + ' has ended.'
             : 'You left Super Admin access mode, so you were logged out.';
         box.innerHTML = '<span style="flex:1; min-width:0; overflow-wrap:anywhere;">🔒 ' + txt + '</span><span onclick="document.getElementById(\'sa-end-note\').remove(); document.getElementById(\'login-sec\').style.flexDirection=\'\';" style="cursor:pointer; flex:0 0 auto; font-weight:800; padding:0 2px;">✕</span>';
@@ -11027,6 +11029,7 @@
             rule1: "Please stay alone and visible in the camera frame for the entire session — stepping away will fail the eKYC.",
             rule2: "No other person should appear on screen at any point.",
             rule3: "Please keep your surroundings quiet. Background noise or another voice will fail the eKYC.",
+            rule4: "Do not minimize the app or switch to another app. If you do, the video will stop and the eKYC will fail.",
             readyLine: "Alright, let's get started.",
             codeStep: "Next, a unique verification code is shown on your screen. Please read it and type it below to confirm this is a live session.",
             idStep: (idLabel) => `Now, please hold up your ${idLabel} clearly in front of the back camera. I will capture and verify it automatically.`,
@@ -11045,6 +11048,7 @@
             rule1: "कृपया पूरे सेशन के दौरान अकेले और कैमरे के सामने साफ़ दिखते रहें — बीच में हटने पर ईकेवाईसी फेल हो जाएगा।",
             rule2: "स्क्रीन पर किसी भी समय कोई दूसरा व्यक्ति नहीं दिखना चाहिए।",
             rule3: "कृपया अपने आस-पास शांति बनाए रखें। बैकग्राउंड नॉइज़ या किसी और की आवाज़ से ईकेवाईसी फेल हो सकता है।",
+            rule4: "कृपया ऐप को मिनिमाइज़ न करें और दूसरे ऐप पर न जाएं। ऐसा करने पर वीडियो बंद हो जाएगा और ईकेवाईसी फेल हो जाएगी।",
             readyLine: "ठीक है, चलिए शुरू करते हैं।",
             codeStep: "अब, आपकी स्क्रीन पर एक यूनिक वेरिफिकेशन कोड दिखेगा। कृपया उसे पढ़ें और नीचे टाइप करें, ताकि यह कन्फर्म हो सके कि यह एक लाइव सेशन है।",
             idStep: (idLabel) => `अब कृपया अपना ${idLabel} बैक कैमरे के सामने साफ़ दिखाएं। मैं इसे अपने आप कैप्चर करके वेरीफाई करूंगी।`,
@@ -11063,6 +11067,7 @@
         'Stay alone and visible in frame for the entire session — stepping away fails eKYC.': 'पूरे सेशन में अकेले और कैमरे के फ्रेम में दिखते रहें — हटने पर eKYC फेल हो जाएगी।',
         'No other person should appear on screen at any point.': 'स्क्रीन पर किसी भी समय कोई दूसरा व्यक्ति नहीं दिखना चाहिए।',
         'Keep your surroundings quiet — background noise or other voices will fail eKYC.': 'आस-पास शांति रखें — बैकग्राउंड शोर या दूसरी आवाज़ से eKYC फेल हो जाएगी।',
+        'Do not minimize the app or switch to another app — the video will stop and eKYC will fail.': 'ऐप को मिनिमाइज़ न करें और दूसरे ऐप पर न जाएं — वीडियो बंद हो जाएगा और eKYC फेल हो जाएगी।',
         'Hold up your <strong>Government ID document</strong> clearly, filling most of the frame.': 'अपना <strong>सरकारी पहचान पत्र</strong> साफ़ दिखाएं, ताकि वह फ्रेम का ज़्यादातर हिस्सा भर दे।',
         'The back camera opens automatically — keep it flat, steady and well-lit.': 'बैक कैमरा अपने-आप खुलेगा — दस्तावेज़ को सीधा, स्थिर और अच्छी रोशनी में रखें।',
         "The AI captures and verifies it automatically once it's clearly in view.": 'जैसे ही यह साफ़ दिखेगा, एआई अपने-आप इसे कैप्चर और वेरिफाई कर लेगा।',
@@ -11220,7 +11225,7 @@
                 const introSentences = [
                     t.selfIntro(name, _vekycAiGender),
                     t.introLine2,
-                    t.rule1, t.rule2, t.rule3,
+                    t.rule1, t.rule2, t.rule3, t.rule4,
                     t.readyLine
                 ];
                 vekycSpeakTextsSequential(introSentences.concat(stepSentences));
@@ -12435,7 +12440,7 @@ function openWalletEkycCooldownModal() {
             html += '<div class="wallet-charge-pending-card">' +
                 '<div class="head"><span class="ic">🔄</span> Subscription Renewal Charge Requested</div>' +
                 '<div class="amt">₹' + pending.amount + '</div>' +
-                (pending.plan ? '<div class="note" style="font-weight:800;">📅 ' + pending.plan.name + ' plan — ' + pending.plan.months + ' month' + (pending.plan.months > 1 ? 's' : '') + '</div>' : '') +
+                (pending.plan ? '<div class="note" style="font-weight:800;">📅 ' + pending.plan.name + ' plan — ' + subDur(pending.plan) + '</div>' : '') +
                 (pending.plan && pending.plan.discPct ? '<div class="note" style="font-weight:800;color:#15803d;">🏷️ ' + subEsc(pending.plan.discName) + ' — ' + pending.plan.discPct + '% off (₹' + pending.plan.listPrice + ' → ₹' + pending.amount + ')</div>' : '') +
                 (pending.plan ? subPlanNote(wallet.subscription, pending.plan, 'admin') : '') +
                 (pending.note ? '<div class="note">' + pending.note + '</div>' : '') +
@@ -12503,7 +12508,7 @@ function subAutoText(sub, isAdmin){
         ? 'Your plan renews by itself. On the Next Renewal date ' + price + ' is deducted from your wallet and the plan continues — there is no request to accept. If your balance is low, the wallet may go negative.'
         : 'Set by the Admin. On the renewal date ' + price + ' is deducted from the Admin\'s wallet automatically, so no renewal request is needed. The balance may go negative if funds are low.';
     return isAdmin
-        ? 'On the Next Renewal date we send you a renewal request. Accept it to continue — the fee is deducted when you accept. If it is not accepted within 5 days after expiry, new registrations, student work and fees are blocked.'
+        ? 'Auto-Renewal is OFF, so you must accept each renewal request yourself. <b>Turn it ON</b> and the plan fee is deducted from your wallet automatically on the Next Renewal date — no request to accept, no risk of missing the date, and your dashboard is never restricted. If you leave it OFF and do not accept within 5 days after expiry, new registrations, student work and fees are blocked.'
         : 'Set by the Admin. On the renewal date the system sends the Admin a renewal request automatically. The Admin must accept it. If it is not accepted within 5 days after expiry, restrictions start on the Admin\'s dashboard.';
 }
 function subCardHtml(sub, isAdmin, wallet){
@@ -12535,13 +12540,13 @@ function subCardHtml(sub, isAdmin, wallet){
 function subDownloadSelected(btn){ subDownloadInvoice(parseInt(btn.parentNode.querySelector('select').value, 10)); }
 function subInvoiceHtml(wallet, libId, h, idx, cfg){
     cfg = cfg || {};
-    const ps = h.periodStart || h.date, pe = h.periodEnd || (function(){ const d = new Date(ps); d.setMonth(d.getMonth() + (h.months || 1)); d.setDate(d.getDate() - 1); return d.toISOString(); })();
+    const ps = h.periodStart || h.date, pe = h.periodEnd || (function(){ const d = new Date(ps); if (h.days > 0) d.setDate(d.getDate() + h.days); else d.setMonth(d.getMonth() + (h.months || 1)); d.setDate(d.getDate() - 1); return d.toISOString(); })();
     const no = subInvNo(h, idx), txn = subResolveTxn(wallet, h), isLast = idx === ((wallet.subscription && wallet.subscription.history) || []).length - 1;
     const row = (k, v) => '<tr><td style="color:#64748b;width:45%">' + k + '</td><td><b>' + v + '</b></td></tr>';
     return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + subEsc(no) + '</title><style>body{font-family:Arial,sans-serif;color:#0f172a;max-width:720px;margin:30px auto;padding:0 20px}h1{margin:0;font-size:1.5rem;color:#0369a1}.top{display:flex;justify-content:space-between;border-bottom:3px solid #0369a1;padding-bottom:14px}.m{font-size:.85rem;line-height:1.7}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{padding:10px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:.88rem}th{background:#f1f5f9}.box td{padding:7px 10px;font-size:.85rem}.t{text-align:right;font-size:1.1rem;font-weight:800;margin-top:16px}.paid{display:inline-block;border:2px solid #16a34a;color:#16a34a;font-weight:800;padding:3px 12px;border-radius:6px;margin-top:8px}.f{margin-top:36px;font-size:.72rem;color:#64748b;text-align:center}@media print{body{margin:0}}</style></head><body>' +
         '<div class="top"><div><h1>Samarthak</h1><div class="m">Subscription Invoice</div></div><div class="m" style="text-align:right"><b style="font-size:1.05rem">' + subEsc(no) + '</b><br>Date: ' + subFmt(h.date) + '<br><span class="paid">PAID</span></div></div>' +
         '<div class="m" style="margin-top:16px"><b>Billed To</b><br>' + (cfg.libName ? '<b>' + subEsc(cfg.libName) + '</b><br>' : '') + (cfg.ownerName ? 'Owner: ' + subEsc(cfg.ownerName) + '<br>' : '') + (cfg.address ? subEsc(cfg.address) + (cfg.pin ? ' – ' + subEsc(cfg.pin) : '') + '<br>' : '') + (cfg.mobile ? 'Mobile: ' + subEsc(cfg.mobile) + '<br>' : '') + 'Admin ID: ' + subEsc(libId) + (wallet.id ? '<br>Wallet UID: ' + subEsc(wallet.id) : '') + '</div>' +
-        '<table><tr><th>Description</th><th>Period</th><th style="text-align:right">Amount</th></tr><tr><td>' + subEsc(h.planName) + ' Plan (' + h.months + ' month' + (h.months > 1 ? 's' : '') + ')</td><td>' + subFmt(ps) + ' – ' + subFmt(pe) + '</td><td style="text-align:right">₹' + h.amount + '</td></tr></table>' +
+        '<table><tr><th>Description</th><th>Period</th><th style="text-align:right">Amount</th></tr><tr><td>' + subEsc(h.planName) + ' Plan (' + subDur(h) + ')</td><td>' + subFmt(ps) + ' – ' + subFmt(pe) + '</td><td style="text-align:right">₹' + h.amount + '</td></tr></table>' +
         (h.discPct ? '<div class="m" style="text-align:right;margin-top:8px">List price: ₹' + h.listPrice + ' &nbsp;·&nbsp; Discount (' + subEsc(h.discName) + ' ' + h.discPct + '%): −₹' + (Number(h.listPrice) - Number(h.amount)).toFixed(2) + '</div>' : '') + '<div class="t">Total Paid: ₹' + h.amount + '</div>' +
         '<table class="box" style="margin-top:20px">' + row('Invoice Number', subEsc(no)) + row('Transaction ID', subEsc(txn)) + row('Payment Mode', h.payMode === 'Cash' ? 'Cash (received by Super Admin)' : 'Samarthak Wallet') + (h.discPct ? row('Discount Offer', subEsc(h.discName) + ' — ' + h.discPct + '% off') : '') + (h.acceptedBy ? row('Accepted By', subEsc(h.acceptedBy)) : '') + (h.forfeitedDays > 0 ? row('Previous plan days forfeited', h.forfeitedDays + ' day(s) (plan changed)') : '') +
             row('Auto Renewal', h.auto ? 'Yes — this payment was auto-renewed' : 'No — renewed manually (Admin accepted)') +
@@ -12559,13 +12564,14 @@ function subPlanNet(p){
     const price = p ? Number(p.price) || 0 : 0, pct = p && Number(p.discPct) > 0 && Number(p.discPct) < 100 ? Number(p.discPct) : 0;
     return { price: price, pct: pct, name: pct ? (p.discName || 'Discount') : '', net: pct ? Math.round(price * (100 - pct)) / 100 : price };
 }
+function subDur(o){ if (!o) return ''; const d = Number(o.days) || 0; if (d > 0) return d + ' day' + (d > 1 ? 's' : ''); const m = Number(o.months) || 0; return m + ' month' + (m > 1 ? 's' : ''); }
 const SUB_CARRY_DAYS = 2;
 function subLatestPlan(id){ try { const a = JSON.parse(localStorage.getItem('Samarthak_SA_SubPlans')); return (a && a.find(p => p.id === id)) || null; } catch (e) { return null; } }
 // What happens to the current term if `plan` is accepted now: fresh / extend (same plan) / carry (switch with <=2 days left) / change (switch, remaining days lost).
 function subTermMode(sub, plan){
     const d = sub && sub.expiresAt ? subDaysLeft(sub.expiresAt) : -1;
     if (d < 0) return { kind: 'fresh', days: 0 };
-    if (sub.planId === plan.id && sub.months === plan.months) return { kind: 'extend', days: d };
+    if (sub.planId === plan.id && sub.months === plan.months && (sub.days || 0) === (plan.days || 0)) return { kind: 'extend', days: d };
     return d <= SUB_CARRY_DAYS ? { kind: 'carry', days: d } : { kind: 'change', days: d };
 }
 function subPlanNote(sub, plan, role){
@@ -12609,17 +12615,17 @@ function subApplyTerm(w, plan, amount, txnId, auto, isAutoCharge){
     const now = new Date(), old = w.subscription, mode = subTermMode(old, plan), stack = mode.kind === 'extend' || mode.kind === 'carry';
     const start = new Date(); start.setHours(0, 0, 0, 0);
     if (stack) { start.setTime(new Date(old.expiresAt).getTime()); start.setDate(start.getDate() + 1); start.setHours(0, 0, 0, 0); }
-    const end = new Date(start); end.setMonth(end.getMonth() + plan.months); end.setDate(end.getDate() - 1); end.setHours(23, 59, 59, 999);
+    const end = new Date(start); if (plan.days > 0) end.setDate(end.getDate() + plan.days); else end.setMonth(end.getMonth() + plan.months); end.setDate(end.getDate() - 1); end.setHours(23, 59, 59, 999);
     const hist = (old && old.history) || [];
-    hist.push({ planName: plan.name, months: plan.months, amount: amount, listPrice: plan.listPrice || plan.price, discName: plan.discName || '', discPct: plan.discPct || 0, date: now.toISOString(), txnId: txnId, periodStart: start.toISOString(), periodEnd: end.toISOString(), auto: !!isAutoCharge, forfeitedDays: mode.kind === 'change' ? mode.days : 0 });
-    w.subscription = { planId: plan.id, planName: plan.name, months: plan.months, price: plan.price || amount, autoRenew: !!auto, startedAt: stack ? (old.startedAt || start.toISOString()) : start.toISOString(), expiresAt: end.toISOString(), history: hist };
+    hist.push({ planName: plan.name, months: plan.months, days: plan.days || 0, amount: amount, listPrice: plan.listPrice || plan.price, discName: plan.discName || '', discPct: plan.discPct || 0, date: now.toISOString(), txnId: txnId, periodStart: start.toISOString(), periodEnd: end.toISOString(), auto: !!isAutoCharge, forfeitedDays: mode.kind === 'change' ? mode.days : 0 });
+    w.subscription = { planId: plan.id, planName: plan.name, months: plan.months, days: plan.days || 0, price: plan.price || amount, autoRenew: !!auto, startedAt: stack ? (old.startedAt || start.toISOString()) : start.toISOString(), expiresAt: end.toISOString(), history: hist };
 }
 // Fully automatic renewal on the Next Renewal date (Auto-Renew ON). Uses the Super Admin's CURRENT plan definition (so plan edits apply),
 // may take the wallet negative (reason recorded), and needs an Active wallet.
 function subAutoRenewCore(w, genId){
     const s = w.subscription;
     if (!s || !s.autoRenew || !s.expiresAt || w.status !== 'active' || subDaysLeft(s.expiresAt) > 0) return false;
-    const lp = subLatestPlan(s.planId), plan = { id: s.planId, name: lp ? lp.name : s.planName, months: lp ? lp.months : s.months, price: subPlanNet(lp || { price: s.price }).net, listPrice: lp ? lp.price : s.price, discName: (lp && lp.discPct > 0) ? lp.discName : '', discPct: (lp && lp.discPct > 0) ? lp.discPct : 0 };
+    const lp = subLatestPlan(s.planId), plan = { id: s.planId, name: lp ? lp.name : s.planName, months: lp ? lp.months : s.months, days: lp ? lp.days : s.days, price: subPlanNet(lp || { price: s.price }).net, listPrice: lp ? lp.price : s.price, discName: (lp && lp.discPct > 0) ? lp.discName : '', discPct: (lp && lp.discPct > 0) ? lp.discPct : 0 };
     if (!(plan.price > 0)) return false;
     const nowIso = new Date().toISOString(), txnId = genId(), before = w.balance || 0;
     w.balance = before - plan.price; const neg = w.balance < 0;
@@ -12637,7 +12643,7 @@ function subAutoRequestCore(w){
     if (!s || !s.expiresAt || s.autoRenew || w.status !== 'active' || !(w.setup && w.setup.done) || subDaysLeft(s.expiresAt) > 0) return false;
     w.chargeRequests = w.chargeRequests || [];
     if (s.autoRequestedFor === s.expiresAt || w.chargeRequests.some(r => r.status === 'Pending' && r.plan)) return false;
-    const lp = subLatestPlan(s.planId), plan = { id: s.planId, name: lp ? lp.name : s.planName, months: lp ? lp.months : s.months, price: subPlanNet(lp || { price: s.price }).net, listPrice: lp ? lp.price : s.price, discName: (lp && lp.discPct > 0) ? lp.discName : '', discPct: (lp && lp.discPct > 0) ? lp.discPct : 0 };
+    const lp = subLatestPlan(s.planId), plan = { id: s.planId, name: lp ? lp.name : s.planName, months: lp ? lp.months : s.months, days: lp ? lp.days : s.days, price: subPlanNet(lp || { price: s.price }).net, listPrice: lp ? lp.price : s.price, discName: (lp && lp.discPct > 0) ? lp.discName : '', discPct: (lp && lp.discPct > 0) ? lp.discPct : 0 };
     if (!(plan.price > 0)) return false;
     w.chargeRequests.push({ id: 'WCR' + Date.now() + Math.floor(Math.random() * 1000), type: 'renewal', amount: plan.price, note: 'Sent automatically by the system on the Next Renewal date', status: 'Pending', requestedAt: new Date().toISOString(), decidedAt: null, decisionReason: null, plan: plan, autoSent: true });
     s.autoRequestedFor = s.expiresAt;
@@ -12774,7 +12780,7 @@ function subAskAutoRenew(req, cb){
     const o = document.createElement('div');
     o.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
     o.innerHTML = '<div style="background:#fff;border-radius:18px;padding:20px;max-width:360px;width:100%;box-sizing:border-box;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;"><div style="font-weight:800;font-size:.95rem;">🔄 Accept Renewal — ₹' + req.amount + '</div>' +
-        '<div style="font-size:.78rem;color:#64748b;margin:6px 0 4px;line-height:1.5;">' + subEsc(req.plan.name) + ' plan (' + req.plan.months + ' month' + (req.plan.months > 1 ? 's' : '') + '). This amount will be deducted from your wallet now.</div>' + (req.plan.discPct ? '<div style="font-size:.74rem;font-weight:800;color:#15803d;margin:2px 0 4px;">🏷️ ' + subEsc(req.plan.discName) + ' — ' + req.plan.discPct + '% off (₹' + req.plan.listPrice + ' → ₹' + req.amount + ')</div>' : '') + subPlanNote(wallet && wallet.subscription, req.plan, 'admin') +
+        '<div style="font-size:.78rem;color:#64748b;margin:6px 0 4px;line-height:1.5;">' + subEsc(req.plan.name) + ' plan (' + subDur(req.plan) + '). This amount will be deducted from your wallet now.</div>' + (req.plan.discPct ? '<div style="font-size:.74rem;font-weight:800;color:#15803d;margin:2px 0 4px;">🏷️ ' + subEsc(req.plan.discName) + ' — ' + req.plan.discPct + '% off (₹' + req.plan.listPrice + ' → ₹' + req.amount + ')</div>' : '') + subPlanNote(wallet && wallet.subscription, req.plan, 'admin') +
         '<div id="sub-auto-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#fff,#f0f9ff);border:1px solid #bae6fd;border-radius:14px;padding:12px 14px;"><div><div style="font-size:.82rem;font-weight:800;">🔁 Auto-Renewal</div><div style="font-size:.66rem;font-weight:600;color:#64748b;line-height:1.4;margin-top:2px;">₹' + (req.plan.price || req.amount) + ' is deducted from your wallet on every renewal date and your plan continues — no request to accept. Leave it OFF to receive a renewal request each time. You can change this anytime from Subscription.</div></div><button type="button" id="sub-auto-sw" role="switch" aria-checked="false" style="flex-shrink:0;position:relative;width:48px;height:27px;border-radius:20px;border:none;padding:0;cursor:pointer;transition:background .25s;background:#cbd5e1;box-shadow:inset 0 1px 3px rgba(0,0,0,.18);"><span id="sub-auto-knob" style="position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:left .25s;"></span></button></div>' +
         '<div style="display:flex;gap:8px;margin-top:14px;"><button id="sub-auto-no" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #cbd5e1;background:#fff;color:#334155;font-weight:800;cursor:pointer;">Cancel</button><button id="sub-auto-ok" style="flex:2;padding:11px;border-radius:10px;border:none;background:#16a34a;color:#ffffff;font-weight:800;font-size:.85rem;cursor:pointer;">✅ Accept &amp; Deduct</button></div></div>';
     document.body.appendChild(o);
@@ -16098,21 +16104,22 @@ function subAskAutoRenew(req, cb){
         if (!banner) {
             banner = document.createElement('div');
             banner.id = 'sa-impersonate-banner';
-            banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#7c2d12; color:#fff; box-sizing:border-box; padding:7px 10px; font-size:0.74rem; font-weight:800; z-index:99999; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:nowrap; box-shadow:0 2px 10px rgba(0,0,0,0.2);';
+            banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; box-sizing:border-box; background:#7c2d12; color:#fff; padding:8px 12px; font-size:0.74rem; font-weight:800; line-height:1.45; z-index:99999; display:flex; align-items:center; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; box-shadow:0 2px 10px rgba(0,0,0,0.2);';
             document.body.prepend(banner);
             document.body.style.paddingTop = '44px';
         }
-        banner.title = 'Super Admin Access Mode — operating as Admin ' + adminId + ' (authorized by admin)';
-        banner.innerHTML = `<span style="flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🛡️ Super Admin Mode · Admin ${adminId}</span>
-                <span id="sa-banner-timer" style="flex:0 0 auto; font-family:'Courier New',monospace; background:rgba(255,255,255,.2); padding:3px 8px; border-radius:6px; white-space:nowrap;">--:--</span>
-                <button onclick="exitSuperAdminImpersonation('exit')" style="flex:0 0 auto; width:auto; margin:0; background:#fff; color:#7c2d12; padding:5px 11px; border-radius:6px; font-size:0.7rem; font-weight:800;">Exit</button>`;
-        document.body.style.paddingTop = banner.offsetHeight + 'px';
+        banner.innerHTML = `<span style="flex:1 1 210px; min-width:0;">🛡️ Super Admin Access Mode — operating as Admin ${adminId} (authorized by admin)</span>
+                <span style="flex:0 0 auto; display:flex; align-items:center; gap:8px;"><span id="sa-banner-timer" style="font-family:'Courier New',monospace; background:rgba(255,255,255,.2); padding:3px 9px; border-radius:6px; white-space:nowrap;">--:--</span><span>left</span>
+                <button onclick="exitSuperAdminImpersonation('exit')" style="width:auto; margin:0; background:#fff; color:#7c2d12; padding:5px 12px; border-radius:6px; font-size:0.72rem; font-weight:800;">Exit</button></span>`;
+        const fitBanner = () => { document.body.style.paddingTop = banner.offsetHeight + 'px'; };
+        fitBanner(); setTimeout(fitBanner, 300); window.addEventListener('resize', fitBanner);
         const updateText = () => {
             const msLeft = expiresAt - Date.now();
             if (msLeft <= 0) { exitSuperAdminImpersonation('expired'); return; }
             const tot = Math.ceil(msLeft / 1000), mm = Math.floor(tot / 60), ss = tot % 60;
             const t = document.getElementById('sa-banner-timer');
             if (t) t.textContent = String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+            if (document.body.style.paddingTop !== banner.offsetHeight + 'px') document.body.style.paddingTop = banner.offsetHeight + 'px';
         };
         updateText();
         if (_saBannerInterval) clearInterval(_saBannerInterval);
