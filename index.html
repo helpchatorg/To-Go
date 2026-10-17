@@ -523,6 +523,8 @@
         .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .btn-edit-h { background: var(--selected); padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
         .btn-del-h { background: #dc2626; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
+        .btn-seatfree-h { background: #0d9488; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
+        .btn-seatfree-h:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; opacity: 1; }
         .btn-idcard-h { background: #0891b2; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 80px; color: white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; transition: all 0.2s; }
         .btn-idcard-h:hover { background: #0e7490; }
 
@@ -7339,10 +7341,10 @@
         pend.forEach(r => {
             html += '<div class="history-card" style="border-left-color:#f59e0b;"><div style="display:flex;gap:12px;align-items:center;">' + img(r) +
                 '<div style="flex:1;min-width:0;"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><strong style="font-size:0.95rem;">' + prEsc(r.name) + '</strong><span style="color:var(--grey);font-size:0.66rem;font-weight:800;font-family:monospace;">' + prEsc(r.ref) + '</span></div>' +
-                '<p style="font-size:0.76rem;margin:3px 0;color:var(--grey);">Seat ' + prEsc(r.seatLabel) + ' &nbsp;|&nbsp; ' + prEsc(r.shiftName) + ' &nbsp;|&nbsp; ₹' + r.amount + ' &nbsp;|&nbsp; 📞 ' + prEsc(r.mobile) + '</p>' +
+                '<p style="font-size:0.76rem;margin:3px 0;color:var(--grey);">' + (r.waitlist ? '<b style="color:#b45309;">⏳ Waiting List request (no seat)</b>' : (r.seat ? 'Seat ' + prEsc(r.seatLabel) : '<b style="color:#0f766e;">🔓 Seat freed</b>' + (r.seatFreedInfo ? ' (' + prEsc(r.seatFreedInfo.reason) + ')' : ''))) + ' &nbsp;|&nbsp; ' + prEsc(r.shiftName) + ' &nbsp;|&nbsp; ₹' + r.amount + ' &nbsp;|&nbsp; 📞 ' + prEsc(r.mobile) + '</p>' +
                 '<div style="margin:4px 0;">' + prPayLine(r) + '</div>' +
                 '<p style="font-size:0.66rem;color:#94a3b8;margin:2px 0;">Applied: ' + formatAppDate(r.submittedAt) + ' • waiting for your approval</p></div></div>' +
-                '<div style="display:flex;gap:8px;margin-top:10px;"><button onclick="openPendingRegReview(\'' + r.id + '\')" style="background:#16a34a;flex:2;padding:10px;font-size:0.78rem;margin:0;">🔍 Review &amp; Approve</button><button onclick="rejectPendingReg(\'' + r.id + '\')" style="background:#dc2626;flex:1;padding:10px;font-size:0.78rem;margin:0;">✕ Reject</button></div></div>';
+                '<div style="display:flex;gap:8px;margin-top:10px;"><button onclick="openPendingRegReview(\'' + r.id + '\')" style="background:#16a34a;flex:2;padding:10px;font-size:0.78rem;margin:0;">🔍 Review &amp; Approve</button>' + ((!r.waitlist && r.seat) ? '<button onclick="freePendingRegSeat(\'' + r.id + '\')" style="background:#0d9488;flex:1;padding:10px;font-size:0.78rem;margin:0;">🔓 Seat Free</button>' : '') + '<button onclick="rejectPendingReg(\'' + r.id + '\')" style="background:#dc2626;flex:1;padding:10px;font-size:0.78rem;margin:0;">✕ Reject</button></div></div>';
         });
         if (done.length) {
             html += '<div style="font-size:0.8rem;font-weight:800;margin:16px 4px 8px;">🧾 Past decisions</div>';
@@ -7350,14 +7352,15 @@
                 const ok = r.status === 'approved';
                 html += '<div class="history-card" style="border-left-color:' + (ok ? '#16a34a' : '#dc2626') + ';"><div style="display:flex;gap:12px;align-items:center;">' + img(r) +
                     '<div style="flex:1;min-width:0;"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;"><strong style="font-size:0.9rem;">' + prEsc(r.name) + '</strong><span style="font-size:0.7rem;font-weight:800;color:' + (ok ? '#16a34a' : '#dc2626') + ';">' + (ok ? '✅ Approved' : '❌ Rejected') + '</span></div>' +
-                    '<p style="font-size:0.72rem;margin:3px 0;color:var(--grey);">' + prEsc(r.ref) + ' • ' + prEsc(r.shiftName) + ' • ' + (ok ? 'Seat ' + prEsc(r.approvedSeatLabel || r.seatLabel) : '') + ' • ' + formatAppDate(r.decidedAt) + '</p>' +
-                    (ok ? '<p style="font-size:0.72rem;margin:2px 0;font-weight:800;color:#166534;">Registration No: ' + prEsc(r.regNo) + '</p>' : '<p style="font-size:0.72rem;margin:2px 0;color:#991b1b;">Reason: ' + prEsc(r.decisionReason) + '</p>') + '</div></div></div>';
+                    '<p style="font-size:0.72rem;margin:3px 0;color:var(--grey);">' + prEsc(r.ref) + ' • ' + prEsc(r.shiftName) + ' • ' + (ok ? (r.waitlist ? 'Added to Waiting List' : 'Seat ' + prEsc(r.approvedSeatLabel || r.seatLabel)) : '') + ' • ' + formatAppDate(r.decidedAt) + '</p>' +
+                    (ok ? '<p style="font-size:0.72rem;margin:2px 0;font-weight:800;color:#166534;">' + (r.waitlist ? 'Waiting List ID: ' + prEsc(r.waitlistId) + (r.regNo ? ' • Registration No: ' + prEsc(r.regNo) : '') : 'Registration No: ' + prEsc(r.regNo)) + '</p>' : '<p style="font-size:0.72rem;margin:2px 0;color:#991b1b;">Reason: ' + prEsc(r.decisionReason) + '</p>') + '</div></div></div>';
             });
         }
         body.innerHTML = html;
     }
     function openPendingRegReview(id) {
         const r = (pendingRegs || []).find(x => x.id === id && x.status === 'pending'); if (!r) { renderHistory(); return; }
+        if (r.waitlist) { openWaitlistReview(r); return; }
         const sh = config.shifts.find(x => x.id === r.shift);
         if (!sh) { alert('This shift no longer exists in your configuration. Please reject this request or restore the shift.'); return; }
         const busy = prAdminBusySeats(sh, r.id), free = !busy.has(r.seat);
@@ -7387,8 +7390,42 @@
             '<div style="display:flex;gap:8px;margin-top:14px;"><button id="pr-review-ok" disabled style="background:#16a34a;flex:2;margin:0;opacity:.45;" onclick="approvePendingReg(\'' + r.id + '\')">✅ Confirm Registration</button><button style="background:#dc2626;flex:1;margin:0;" onclick="document.getElementById(\'pr-review-overlay\').remove();rejectPendingReg(\'' + r.id + '\')">✕ Reject</button></div></div>';
         document.body.appendChild(o);
     }
+    function openWaitlistReview(r) {
+        const row = (k, v) => '<tr><td style="color:var(--grey);padding:4px 0;width:40%;">' + k + '</td><td style="padding:4px 0;font-weight:700;">' + v + '</td></tr>';
+        const verify = r.mode === 'Cash'
+            ? '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;font-size:0.76rem;line-height:1.55;color:#92400e;"><b>💵 Cash at counter.</b> The student will pay ₹' + r.amount + ' in cash at the counter.</div>'
+            : '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:12px;font-size:0.76rem;line-height:1.55;color:#075985;"><b>📲 Online payment — verify before approving.</b><br>App: <b>' + prEsc(r.payApp) + '</b><br>Transaction ID: <b style="font-family:monospace;">' + prEsc(r.txnId) + '</b><br>Amount: <b>₹' + r.amount + '</b></div>';
+        const old = document.getElementById('pr-review-overlay'); if (old) old.remove();
+        const o = document.createElement('div'); o.id = 'pr-review-overlay';
+        o.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);backdrop-filter:blur(5px);z-index:99990;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;';
+        o.innerHTML = '<div style="background:#fff;border-radius:18px;max-width:440px;width:100%;max-height:92vh;overflow-y:auto;padding:18px;box-sizing:border-box;text-align:left;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;"><h3 style="margin:0;font-size:1rem;">⏳ Review Waiting List Request</h3><button onclick="document.getElementById(\'pr-review-overlay\').remove()" style="width:auto;margin:0;padding:6px 12px;background:#94a3b8;font-size:0.72rem;">✕</button></div>' +
+            '<div style="display:flex;gap:12px;align-items:center;margin:12px 0;">' + (r.photo ? '<img src="' + r.photo + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;">' : '') + '<div><div style="font-weight:800;font-size:1rem;">' + prEsc(r.name) + '</div><div style="font-size:0.7rem;color:#94a3b8;font-family:monospace;">' + prEsc(r.ref) + '</div></div></div>' +
+            '<table style="width:100%;font-size:0.78rem;border-collapse:collapse;">' + row('Guardian', prEsc(r.fname)) + row('Mobile', prEsc(r.mobile)) + row('Email', prEsc(r.email)) + row('Date of birth', prEsc(r.dob)) + row('Shift', prEsc(r.shiftName) + ' (₹' + r.amount + ')') + '</table>' +
+            '<div style="margin:12px 0;">' + verify + '</div>' +
+            '<div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:9px 11px;font-size:0.74rem;font-weight:700;margin-bottom:10px;">Approving adds this student to the Waiting List of this shift. A seat is allotted automatically when one becomes free.</div>' +
+            '<div style="display:flex;gap:8px;margin-top:14px;"><button style="background:#16a34a;flex:2;margin:0;" onclick="approveWaitlistReg(\'' + r.id + '\')">✅ Approve &amp; Add to Waiting List</button><button style="background:#dc2626;flex:1;margin:0;" onclick="document.getElementById(\'pr-review-overlay\').remove(); rejectPendingReg(\'' + r.id + '\')">❌ Reject</button></div></div>';
+        document.body.appendChild(o);
+    }
+    function approveWaitlistReg(id) {
+        const r = (pendingRegs || []).find(x => x.id === id && x.status === 'pending'); if (!r) return;
+        const sh = config.shifts.find(x => x.id === r.shift); if (!sh) { alert('Shift not found.'); return; }
+        if ((waitingList || []).some(w => w.status === 'waiting' && String(w.mobile) === String(r.mobile) && w.shift === r.shift)) { alert('This mobile number is already on the Waiting List for this shift.'); return; }
+        const wlId = 'WL' + generateUniqueRegDigits(), nowIso = new Date().toISOString();
+        waitingList.push({ id: wlId, name: r.name, fname: r.fname, mobile: r.mobile, email: r.email, dob: r.dob, photo: r.photo, shift: r.shift, shiftName: sh.name, amount: r.amount, mode: r.mode, payApp: r.payApp, txnId: r.txnId, requestedAt: nowIso, status: 'waiting', source: 'student', appRef: r.ref });
+        r.status = 'approved'; r.decidedAt = nowIso; r.waitlistId = wlId;
+        saveToLocal();
+        const ov = document.getElementById('pr-review-overlay'); if (ov) ov.remove();
+        try { autoAllocateSeats('Approved new registration'); } catch (e) {}
+        const pos = waitingList.filter(w => w.status === 'waiting' && w.shift === r.shift).length;
+        const now = waitingList.find(w => w.id === wlId);
+        const got = now && now.status === 'allocated';
+        alert('✅ Approved.\n\n' + r.name + ' was added to the Waiting List.\nWaiting List ID: ' + wlId + '\nShift: ' + sh.name + (got ? '\n\nA seat was free, so the student has already been allotted a seat.' : '\nPosition: #' + pos + '\n\nA seat will be allotted automatically when one becomes free.'));
+        updateNewRegBadge(); renderHistory(); if (typeof renderWaitingListAdmin === 'function') try { renderWaitingListAdmin(); } catch (e) {}
+    }
     function approvePendingReg(id) {
         const r = (pendingRegs || []).find(x => x.id === id && x.status === 'pending'); if (!r) return;
+        if (r.waitlist) { approveWaitlistReg(id); return; }
         const seat = parseInt(document.getElementById('pr-review-seat').value, 10);
         if (!seat) { alert('Please choose a seat to assign.'); return; }
         const sh = config.shifts.find(x => x.id === r.shift); if (!sh) { alert('Shift not found.'); return; }
@@ -8908,7 +8945,7 @@
     // conflicts, capacity math) keeps using the number directly — only user-facing text should
     // call this.
     function seatLabel(n) {
-        if (!n && n !== 0) return n;
+        if (!n && n !== 0) return '—';
         return (config.seatLabels && config.seatLabels[n - 1]) || String(n);
     }
 
@@ -9215,9 +9252,9 @@
         const dt = document.querySelector('#csa-reg-card details'); if (dt) dt.open = true;
     }
     function prSetDone(wl) {
-        document.getElementById('pr-done-title').innerText = wl ? 'Added to Waiting List' : 'Application submitted';
-        document.getElementById('pr-done-lab').innerText = wl ? 'Waiting List ID' : 'Application reference';
-        document.getElementById('pr-done-msg').innerHTML = wl ? 'You are on the Waiting List. <b>You will be allotted a seat automatically as soon as one is free in your shift.</b>' : 'Your application is waiting for the library\'s approval. <b>Your registration number is generated after the library verifies your details and payment.</b>';
+        document.getElementById('pr-done-title').innerText = wl ? 'Waiting List request submitted' : 'Application submitted';
+        document.getElementById('pr-done-lab').innerText = wl ? 'Application reference' : 'Application reference';
+        document.getElementById('pr-done-msg').innerHTML = wl ? 'Your Waiting List request is <b>waiting for the library\'s approval</b>. Only after approval are you added to the Waiting List.' : 'Your application is waiting for the library\'s approval. <b>Your registration number is generated after the library verifies your details and payment.</b>';
     }
     function prJoinWaitlist() {
         document.querySelectorAll('#pr-step2 .error-msg').forEach(e => e.style.display = 'none');
@@ -9240,22 +9277,20 @@
         const dupe = _pr.pending.find(r => r.mobile === mobile);
         if (dupe) { alert('You already have a pending application (' + dupe.ref + ') for this library. Please wait for the library to review it, or check its status.'); return; }
         if (mode === 'Online' && (wl.some(w => w.status === 'waiting' && w.mode === 'Online' && String(w.txnId).toLowerCase() === txn.toLowerCase()) || _pr.pending.some(r => r.mode === 'Online' && String(r.txnId).toLowerCase() === txn.toLowerCase()))) { alert('This Transaction ID has already been used. Please enter the correct Transaction ID of your payment.'); return; }
-        let digits;
-        do { digits = String(Math.floor(1000000000 + Math.random() * 9000000000)); }
-        while ((d.students || []).some(st => st.regNo === 'REG' + digits) || wl.some(w => w.id === 'WL' + digits));
-        const entry = {
-            id: 'WL' + digits, name: document.getElementById('pr-name').value.trim(), fname: document.getElementById('pr-fname').value.trim(), mobile: mobile,
+        const all = d.pendingRegs || [];
+        let ref; do { ref = 'APP' + Math.floor(1000000000 + Math.random() * 9000000000); } while (all.some(r => r.ref === ref));
+        const rec = {
+            id: 'PR' + Date.now() + Math.floor(Math.random() * 1000), ref: ref, status: 'pending', submittedAt: new Date().toISOString(), source: 'student', waitlist: true,
+            name: document.getElementById('pr-name').value.trim(), fname: document.getElementById('pr-fname').value.trim(), mobile: mobile,
             email: document.getElementById('pr-email').value.trim(), dob: document.getElementById('pr-dob').value, photo: _pr.photo,
-            shift: sh.id, shiftName: sh.name, amount: sh.price,
-            mode: mode, payApp: mode === 'Online' ? app : 'Cash', txnId: mode === 'Online' ? txn : 'N/A',
-            requestedAt: new Date().toISOString(), status: 'waiting', source: 'student'
+            shift: sh.id, shiftName: sh.name, seat: null, seatLabel: '', amount: sh.price,
+            mode: mode, payApp: mode === 'Online' ? app : 'Cash', txnId: mode === 'Online' ? txn : 'N/A'
         };
-        try { d.waitingList = wl.concat(entry); localStorage.setItem(dbKeyFor(_pr.adminId), JSON.stringify(d)); }
+        try { d.pendingRegs = all.concat(rec); localStorage.setItem(dbKeyFor(_pr.adminId), JSON.stringify(d)); }
         catch (e) { alert('Could not save (device storage is full). Please try again.'); return; }
-        const position = d.waitingList.filter(w => w.status === 'waiting' && w.shift === sh.id).length;
         prSetDone(true);
-        document.getElementById('pr-done-ref').innerText = entry.id;
-        document.getElementById('pr-done-pay').innerHTML = '⏳ Your position in the <b>' + prEsc(sh.name) + '</b> waiting list: <b>#' + position + '</b>. ' + (mode === 'Cash' ? 'Please keep ₹' + sh.price + ' ready to pay in cash at the library counter when your seat is allotted.' : 'The library will match your Transaction ID <b>' + prEsc(txn) + '</b>.') + ' Check anytime with the “Waiting List” button on the login page.';
+        document.getElementById('pr-done-ref').innerText = ref;
+        document.getElementById('pr-done-pay').innerHTML = '🕓 <b>Step 1:</b> the library approves your request. <b>Step 2:</b> you are added to the <b>' + prEsc(sh.name) + '</b> Waiting List. <b>Step 3:</b> you are allotted a seat automatically when one is free. ' + (mode === 'Cash' ? 'Keep ₹' + sh.price + ' ready to pay in cash at the library counter.' : 'The library will match your Transaction ID <b>' + prEsc(txn) + '</b>.') + ' Track it with “Already applied? Check application status”.';
         document.getElementById('pr-step2').style.display = 'none'; document.getElementById('pr-done').style.display = 'block';
         document.querySelector('#public-reg-modal > div').scrollTop = 0;
     }
@@ -9279,7 +9314,8 @@
         const fmtDob = v => { if (!v) return '—'; const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : E(v); };
         const row = (k, v) => '<tr><td style="padding:4px 0; color:#64748b; width:42%; vertical-align:top;">' + k + '</td><td style="padding:4px 0; font-weight:800; color:#0f172a; word-break:break-word;">' + v + '</td></tr>';
         let head;
-        if (r.status === 'pending') head = ['#fffbeb', '#fde68a', '#92400e', '🕓 <b>Awaiting library approval</b>', (r.mode === 'Cash' ? 'Deposit ₹' + E(r.amount) + ' in cash at the library counter.' : 'The library will match your Transaction ID.')];
+        if (r.status === 'pending') head = ['#fffbeb', '#fde68a', '#92400e', '🕓 <b>Awaiting library approval' + (r.waitlist ? ' (Waiting List request)' : '') + '</b>', (r.mode === 'Cash' ? 'Deposit ₹' + E(r.amount) + ' in cash at the library counter.' : 'The library will match your Transaction ID.')];
+        else if (r.status === 'approved' && r.waitlist) head = ['#f0fdf4', '#bbf7d0', '#166534', '✅ <b>Approved — you are on the Waiting List</b>', 'You will be allotted a seat automatically when one is free.' + (r.regNo ? ' Seat allotted — log in with your Registration Number.' : '')];
         else if (r.status === 'approved') head = ['#f0fdf4', '#bbf7d0', '#166534', '✅ <b>Approved</b>', 'Log in with your Registration Number and mobile number.'];
         else head = ['#fef2f2', '#fecaca', '#991b1b', '❌ <b>Not approved</b>', 'Reason: ' + E(r.decisionReason || '—')];
         out.innerHTML =
@@ -9288,9 +9324,9 @@
                 (r.photo ? '<div style="text-align:center; margin-bottom:8px;"><img src="' + r.photo + '" alt="Photo" style="width:72px; height:72px; object-fit:cover; border-radius:50%; border:2px solid #e2e8f0;"></div>' : '') +
                 '<table style="width:100%; border-collapse:collapse; font-size:0.74rem;">' +
                     row('Application Ref', '<span style="font-family:monospace;">' + E(r.ref) + '</span>') +
-                    (r.status === 'approved' ? row('Registration No.', '<span style="font-family:monospace; color:#166534;">' + E(r.regNo) + '</span>') : '') +
+                    (r.status === 'approved' && r.waitlistId ? row('Waiting List ID', '<span style="font-family:monospace; color:#166534;">' + E(r.waitlistId) + '</span>') : '') + (r.status === 'approved' && r.regNo ? row('Registration No.', '<span style="font-family:monospace; color:#166534;">' + E(r.regNo) + '</span>') : '') +
                     row('Student Name', E(r.name)) + row("Father's Name", E(r.fname)) + row('Mobile', E(r.mobile)) + row('Email', E(r.email || '—')) + row('Date of Birth', fmtDob(r.dob)) +
-                    row('Shift', E(r.shiftName)) + row('Seat', E(r.status === 'approved' ? (r.approvedSeatLabel || r.seatLabel) : r.seatLabel)) +
+                    row('Shift', E(r.shiftName)) + row('Seat', r.waitlist ? (r.regNo ? E(r.approvedSeatLabel || '—') : 'Not allotted yet (Waiting List)') : E(r.status === 'approved' ? (r.approvedSeatLabel || r.seatLabel) : r.seatLabel)) +
                     row('Fee', '₹' + E(r.amount)) + row('Payment Mode', r.mode === 'Cash' ? 'Cash at counter' : 'Online UPI (' + E(r.payApp || '—') + ')') +
                     (r.mode === 'Online' ? row('Transaction ID', '<span style="font-family:monospace;">' + E(r.txnId) + '</span>') : '') +
                     row('Applied On', fmtD(r.submittedAt)) + (r.decidedAt ? row(r.status === 'approved' ? 'Approved On' : 'Decided On', fmtD(r.decidedAt)) : '') +
@@ -10584,7 +10620,8 @@
                                 <strong style="font-size:0.95rem;">${s.name}</strong>
                                 <span style="color:var(--grey); font-size:0.68rem; font-weight:700;">${s.regNo}</span>
                             </div>
-                            <p style="font-size:0.78rem; margin:3px 0; color:var(--grey);">Seat ${seatLabel(s.seat)} &nbsp;|&nbsp; ${(()=>{const sh=config.shifts.find(x=>x.id===s.shift);return sh?sh.name:s.shiftName;})()}</p>
+                            <p style="font-size:0.78rem; margin:3px 0; color:var(--grey);">${s.seat ? 'Seat ' + seatLabel(s.seat) : '<b style="color:#0f766e;">Seat freed</b>'} &nbsp;|&nbsp; ${(()=>{const sh=config.shifts.find(x=>x.id===s.shift);return sh?sh.name:s.shiftName;})()}</p>
+                            ${(!s.seat && s.seatFreedInfo) ? `<div class="blocked-badge" style="background:#ccfbf1;color:#0f766e;border-color:#5eead4;">🔓 SEAT FREED (was ${prEsc(s.seatFreedInfo.seatLabel)}) — ${prEsc(s.seatFreedInfo.reason)}</div>` : ''}
                             <p style="font-size:0.72rem; font-weight:800; color:${statusColor}; margin:3px 0;">${statusText}</p>
                             <p style="font-size:0.68rem; color:#475569; margin:2px 0;">Reg: ${formatAppDate(s.date)} &nbsp;|&nbsp; Next Due: <strong>${dueDateStr}</strong></p>
                             ${s.isBlocked ? `<div class="blocked-badge">🔒 DASHBOARD BLOCKED</div>` : ''}
@@ -10595,6 +10632,7 @@
                     <div class="settings-wrap">
                         <div class="settings-gear-btn" onclick="toggleCardSettings(event, '${s.id}')">⚙️</div>
                         <div class="settings-dropdown" id="settings-dd-${s.id}">
+                            <button class="danger-opt" onclick="deleteRecord('${s.id}')">🗑️ Delete</button>
                             ${s.isBlocked
                                 ? `<button class="safe-opt" onclick="unblockStudentDashboard('${s.id}')">🔓 Unblock Dashboard</button>`
                                 : `<button class="danger-opt" onclick="openBlockModal('${s.id}')">🔒 Block Dashboard</button>`
@@ -10609,7 +10647,7 @@
                     <button class="btn-fee-h" onclick="openFeePanel('${s.id}')">Manage Fees</button>
                     <button class="btn-att-h" onclick='openReportModal(${JSON.stringify(s)})'>Attendance</button>
                     <button class="btn-edit-h" onclick="editRecord('${s.id}')">Edit</button>
-                    <button class="btn-del-h" onclick="deleteRecord('${s.id}')">Delete</button>
+                    <button class="btn-seatfree-h" ${s.seat ? '' : 'disabled'} onclick="openSeatFreeModal('${s.id}')">${s.seat ? '🔓 Seat Free' : '✔ Seat Freed'}</button>
                     <button class="btn-idcard-h" onclick="generateIdCard('${s.id}')">🪪 Generate ID Card</button>
                 </div>`;
             }
@@ -12572,6 +12610,12 @@ function subResolveTxn(wallet, h){
     return t ? t.id : (h.txnId || '—');
 }
 function subAutoText(sub, isAdmin){
+    const t = subAutoText0(sub, isAdmin);
+    if (sub.autoRenew) return t;
+    const n = (sub.autoSendCount || 0);
+    return t + ' <b>The system sends the renewal request automatically at most 3 times</b> (on the renewal date, then once a day) — ' + (n ? '<b>sent ' + n + ' of 3</b>' : 'none sent yet') + (n >= 3 ? ', no more will be sent.' : '.');
+}
+function subAutoText0(sub, isAdmin){
     const price = sub.price ? '₹' + sub.price : 'the plan fee';
     if (sub.autoRenew) return isAdmin
         ? 'Your plan renews by itself. On the Next Renewal date ' + price + ' is deducted from your wallet and the plan continues — there is no request to accept. If your balance is low, the wallet may go negative.'
@@ -12711,11 +12755,16 @@ function subAutoRequestCore(w){
     const s = w.subscription;
     if (!s || !s.expiresAt || s.autoRenew || w.status !== 'active' || !(w.setup && w.setup.done) || subDaysLeft(s.expiresAt) > 0) return false;
     w.chargeRequests = w.chargeRequests || [];
-    if (s.autoRequestedFor === s.expiresAt || w.chargeRequests.some(r => r.status === 'Pending' && r.plan)) return false;
+    // Max 3 automatic sends per renewal cycle, at most one per calendar day (renewal date, +1 day, +2 days).
+    if (s.autoRequestedFor !== s.expiresAt) { s.autoRequestedFor = s.expiresAt; s.autoSendCount = 0; s.autoSendLastDay = null; }
+    const todayKey = new Date().toISOString().slice(0, 10);
+    if ((s.autoSendCount || 0) >= 3 || s.autoSendLastDay === todayKey) return false;
+    if (w.chargeRequests.some(r => r.status === 'Pending' && r.plan && !r.autoSent)) return false;
     const lp = subLatestPlan(s.planId), plan = { id: s.planId, name: lp ? lp.name : s.planName, months: lp ? lp.months : s.months, days: lp ? lp.days : s.days, price: subPlanNet(lp || { price: s.price }).net, listPrice: lp ? lp.price : s.price, discName: (lp && lp.discPct > 0) ? lp.discName : '', discPct: (lp && lp.discPct > 0) ? lp.discPct : 0 };
     if (!(plan.price > 0)) return false;
-    w.chargeRequests.push({ id: 'WCR' + Date.now() + Math.floor(Math.random() * 1000), type: 'renewal', amount: plan.price, note: 'Sent automatically by the system on the Next Renewal date', status: 'Pending', requestedAt: new Date().toISOString(), decidedAt: null, decisionReason: null, plan: plan, autoSent: true });
-    s.autoRequestedFor = s.expiresAt;
+    w.chargeRequests.push({ id: 'WCR' + Date.now() + Math.floor(Math.random() * 1000), type: 'renewal', amount: plan.price, note: 'Sent automatically by the system on the Next Renewal date (request ' + ((s.autoSendCount || 0) + 1) + ' of 3)', autoSeq: (s.autoSendCount || 0) + 1, status: 'Pending', requestedAt: new Date().toISOString(), decidedAt: null, decisionReason: null, plan: plan, autoSent: true });
+    s.autoSendCount = (s.autoSendCount || 0) + 1; s.autoSendLastDay = todayKey;
+    if (typeof subSupersedePending === 'function') subSupersedePending(w);
     return true;
 }
 // Only the newest pending renewal request stays pending; older unaccepted ones are rejected automatically.
@@ -13586,6 +13635,40 @@ function subAskAutoRenew(req, cb){
         updateShift();
     }
 
+    function openSeatFreeModal(id) {
+        const s = students.find(x => x.id === id); if (!s || !s.seat) return;
+        tmOpenInputModal({
+            icon: '🔓', title: 'Free Seat', type: 'textarea',
+            desc: 'Seat ' + seatLabel(s.seat) + ' (' + (s.shiftName || '') + ') will be freed for other students. ' + s.name + '\'s record, fees and attendance are kept in History.',
+            placeholder: 'Reason for freeing this seat (required)…', confirmLabel: 'Free Seat', confirmColor: '#0d9488',
+            validator: v => !v ? 'A reason is required.' : null,
+            onConfirm: reason => seatFreeStudent(id, reason)
+        });
+    }
+    function seatFreeStudent(id, reason) {
+        const s = students.find(x => x.id === id); if (!s || !s.seat) return;
+        const info = { seat: s.seat, seatLabel: seatLabel(s.seat), shift: s.shift, shiftName: s.shiftName, reason: reason, date: new Date().toISOString() };
+        if (s.shift && db[s.shift]) db[s.shift] = db[s.shift].filter(n => n !== s.seat);
+        s.seatFreedInfo = info; s.seatFreeLog = (s.seatFreeLog || []).concat(info); s.seat = null;
+        saveToLocal(); renderHistory();
+        try { autoAllocateSeats('Seat freed by Admin'); } catch (e) {}
+    }
+    function freePendingRegSeat(id) {
+        const r = (pendingRegs || []).find(x => x.id === id && x.status === 'pending' && x.seat); if (!r) return;
+        tmOpenInputModal({
+            icon: '🔓', title: 'Free Seat', type: 'textarea',
+            desc: 'Seat ' + r.seatLabel + ' held by ' + r.name + '\'s pending request will be freed for others. The request stays in the list; a seat is chosen again when you approve it.',
+            placeholder: 'Reason for freeing this seat (required)…', confirmLabel: 'Free Seat', confirmColor: '#0d9488',
+            validator: v => !v ? 'A reason is required.' : null,
+            onConfirm: reason => {
+                const live = (pendingRegs || []).find(x => x.id === id && x.status === 'pending'); if (!live) return;
+                live.seatFreedInfo = { seat: live.seat, seatLabel: live.seatLabel, reason: reason, date: new Date().toISOString() };
+                live.seat = null; live.seatLabel = '';
+                saveToLocal(); renderHistory();
+                try { autoAllocateSeats('Seat freed from pending request'); } catch (e) {}
+            }
+        });
+    }
     function deleteRecord(id) {
         if (!confirm("Permanently delete this student record?")) return;
         const s = students.find(x => x.id === id);
