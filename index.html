@@ -523,6 +523,7 @@
         .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .btn-edit-h { background: var(--selected); padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
         .btn-del-h { background: #dc2626; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
+        .btn-blk-h { padding: 8px; font-size: 0.7rem; min-width: 60px; }
         .btn-seatfree-h { background: #0d9488; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
         .btn-seatfree-h:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; opacity: 1; }
         .btn-idcard-h { background: #0891b2; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 80px; color: white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; transition: all 0.2s; }
@@ -9290,7 +9291,7 @@
         catch (e) { alert('Could not save (device storage is full). Please try again.'); return; }
         prSetDone(true);
         document.getElementById('pr-done-ref').innerText = ref;
-        document.getElementById('pr-done-pay').innerHTML = '🕓 <b>Step 1:</b> the library approves your request. <b>Step 2:</b> you are added to the <b>' + prEsc(sh.name) + '</b> Waiting List. <b>Step 3:</b> you are allotted a seat automatically when one is free. ' + (mode === 'Cash' ? 'Keep ₹' + sh.price + ' ready to pay in cash at the library counter.' : 'The library will match your Transaction ID <b>' + prEsc(txn) + '</b>.') + ' Track it with “Already applied? Check application status”.';
+        document.getElementById('pr-done-pay').innerHTML = '<div style="font-weight:800;margin-bottom:6px;text-align:left;">What happens next</div><ol style="margin:0;padding-left:20px;text-align:left;line-height:1.6;"><li>The library <b>approves</b> your request.</li><li>You are added to the <b>' + prEsc(sh.name) + '</b> Waiting List.</li><li>You are <b>allotted a seat automatically</b> when one is free.</li></ol><ul style="margin:8px 0 0;padding-left:20px;text-align:left;line-height:1.6;"><li>' + (mode === 'Cash' ? 'Keep <b>₹' + sh.price + '</b> ready to pay in cash at the library counter.' : 'The library will match your Transaction ID <b>' + prEsc(txn) + '</b>.') + '</li><li>Track it with “Already applied? Check application status”.</li></ul>';
         document.getElementById('pr-step2').style.display = 'none'; document.getElementById('pr-done').style.display = 'block';
         document.querySelector('#public-reg-modal > div').scrollTop = 0;
     }
@@ -10632,22 +10633,23 @@
                     <div class="settings-wrap">
                         <div class="settings-gear-btn" onclick="toggleCardSettings(event, '${s.id}')">⚙️</div>
                         <div class="settings-dropdown" id="settings-dd-${s.id}">
-                            <button class="danger-opt" onclick="deleteRecord('${s.id}')">🗑️ Delete</button>
-                            ${s.isBlocked
-                                ? `<button class="safe-opt" onclick="unblockStudentDashboard('${s.id}')">🔓 Unblock Dashboard</button>`
-                                : `<button class="danger-opt" onclick="openBlockModal('${s.id}')">🔒 Block Dashboard</button>`
-                            }
                             <button class="safe-opt" onclick="openDisableAttendanceModal('${s.id}')">🚫 Disable Attendance${(s.attendanceDisabledRanges && s.attendanceDisabledRanges.length) ? ' <span class="notif-dot"></span>' : ''}</button>
-                            <button class="safe-opt" onclick="openAdminAccessStudentModal('${s.id}')">📨 Request Dashboard Access</button>
                             <button class="safe-opt" onclick="openStudentRestrictionModal('${s.id}')">🎫 Ticket Restriction Details${(s.ticketRestriction && s.ticketRestriction.restorationRequests || []).some(r=>r.status==='Pending') ? ' <span class="notif-dot"></span>' : ''}</button>
+                            <button class="safe-opt" onclick="openAdminAccessStudentModal('${s.id}')">📨 Request Dashboard Access</button>
                         </div>
                     </div>
                 </div>
                 <div class="card-actions">
                     <button class="btn-fee-h" onclick="openFeePanel('${s.id}')">Manage Fees</button>
-                    <button class="btn-att-h" onclick='openReportModal(${JSON.stringify(s)})'>Attendance</button>
                     <button class="btn-edit-h" onclick="editRecord('${s.id}')">Edit</button>
-                    <button class="btn-seatfree-h" ${s.seat ? '' : 'disabled'} onclick="openSeatFreeModal('${s.id}')">${s.seat ? '🔓 Seat Free' : '✔ Seat Freed'}</button>
+                    <button class="btn-att-h" onclick='openReportModal(${JSON.stringify(s)})'>Attendance</button>
+                    <button class="btn-del-h" onclick="deleteRecord('${s.id}')">🗑️ Delete</button>
+                    <span style="flex-basis:100%;height:0;margin-top:-8px;"></span>
+                    <button class="btn-seatfree-h" style="flex:1 1 40%;" ${s.seat ? '' : 'disabled'} onclick="openSeatFreeModal('${s.id}')">${s.seat ? 'Seat Free' : '✔ Seat Freed'}</button>
+                    ${s.isBlocked
+                        ? `<button class="btn-blk-h" style="background:#16a34a;flex:1 1 40%;" onclick="unblockStudentDashboard('${s.id}')">🔓 Unblock Dashboard</button>`
+                        : `<button class="btn-blk-h" style="background:#b45309;flex:1 1 40%;" onclick="openBlockModal('${s.id}')">🔒 Block Dashboard</button>`}
+                    <span style="flex-basis:100%;height:0;margin-top:-8px;"></span>
                     <button class="btn-idcard-h" onclick="generateIdCard('${s.id}')">🪪 Generate ID Card</button>
                 </div>`;
             }
