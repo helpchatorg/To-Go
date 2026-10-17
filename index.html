@@ -522,7 +522,7 @@
         .history-card:hover { transform: translateY(-2px); }
         .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .card-actions button { box-sizing: border-box; min-height: 42px; height: 42px; margin: 0; padding: 0 6px; font-size: 0.72rem; font-weight: 800; line-height: 1.15; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; text-align: center; white-space: normal; border: none; color: #fff; cursor: pointer; }
-        .card-actions .btn-fee-h, .card-actions .btn-edit-h, .card-actions .btn-att-h, .card-actions .btn-del-h { flex: 1 1 0; min-width: 0; }
+        .card-actions .btn-fee-h, .card-actions .btn-edit-h, .card-actions .btn-att-h, .card-actions .btn-del-h { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 0.66rem; letter-spacing: -0.01em; overflow: hidden; }
         .card-actions .btn-seatfree-h, .card-actions .btn-blk-h { flex: 1 1 0 !important; min-width: 0; }
         .card-actions .btn-idcard-h { flex: 1 1 100%; width: 100%; }
         .btn-edit-h { background: var(--selected); padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
@@ -5147,7 +5147,7 @@
             w.lockHistory.push({ action: 'reopen_expired', label: 'Reopen Approval Expired - Video eKYC not completed within 1 month', date: _nowIso, by: 'System' });
             return true;
         }
-        if (w && w.status === 'closing' && w.closeFinalizeAt && new Date() >= new Date(w.closeFinalizeAt)) {
+        if (w && w.status === 'closing' && w.closeFinalizeAt && new Date() >= new Date(w.closeFinalizeAt) && (w.balance || 0) >= 0) {
             w.balance = 0;
             w.archivedTransactions = (w.archivedTransactions || []).concat(w.transactions || []);
             w.transactions = [];
@@ -5550,6 +5550,10 @@
         if (!wallet || wallet.status === 'closing' || wallet.status === 'closed') return;
         if (wallet.status === 'frozen') {
             alert('🧊 This wallet is frozen by the Super Admin. It must be unfrozen before you can request Permanent Closure.');
+            return;
+        }
+        if ((wallet.balance || 0) < 0) {
+            alert('❌ Permanent Closure is not possible while the wallet balance is negative.\n\nCurrent balance: ₹' + wallet.balance + '\n\nPlease add funds and bring the balance to ₹0 or above first. You can request closure after that.');
             return;
         }
         const closeCount = countRecentWalletEvents(wallet.lockHistory, 24, e => e.action === 'close_request');
@@ -9852,6 +9856,8 @@
         else saveToLocal();
         renderWaitingListAdmin();
         updateWaitlistNotifDot();
+        // Keep the History list live: students allotted from the Waiting List appear without a manual refresh.
+        try { const hs = document.getElementById('history-sec'); if (changed && hs && hs.classList.contains('active')) renderHistory(); } catch (e) {}
     }
 
     function joinWaitingList() {
@@ -12758,8 +12764,6 @@ function subAutoRenewCore(w, genId){
     w.balance = before - plan.price; const neg = w.balance < 0;
     w.transactions = w.transactions || [];
     w.transactions.push({ id: txnId, type: 'debit', chargeType: 'renewal', amount: plan.price, balanceAfter: w.balance, date: nowIso, note: 'Auto-renewal — ' + plan.name + ' plan' + (neg ? ' (balance went negative: wallet had ₹' + before + ' but the charge was ₹' + plan.price + ')' : ''), by: 'Auto-Renew', isSuperAdminCharge: true, negativeBalance: neg });
-    w.chargeRequests = w.chargeRequests || [];
-    w.chargeRequests.push({ id: 'WCR' + Date.now() + Math.floor(Math.random() * 1000), type: 'renewal', amount: plan.price, note: 'Auto-created by system (Auto-Renew ON)', status: 'Approved', requestedAt: nowIso, decidedAt: nowIso, decisionReason: null, plan: plan, auto: true });
     subApplyTerm(w, plan, plan.price, txnId, true, true);
     if (neg) w.subscription.autoNegative = { kind: 'auto', date: nowIso, amount: plan.price, balanceBefore: before, balanceAfter: w.balance, planName: plan.name };
     return true;
