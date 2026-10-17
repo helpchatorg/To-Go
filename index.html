@@ -521,6 +521,10 @@
         }
         .history-card:hover { transform: translateY(-2px); }
         .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .card-actions button { box-sizing: border-box; min-height: 42px; height: 42px; margin: 0; padding: 0 6px; font-size: 0.72rem; font-weight: 800; line-height: 1.15; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; text-align: center; white-space: normal; border: none; color: #fff; cursor: pointer; }
+        .card-actions .btn-fee-h, .card-actions .btn-edit-h, .card-actions .btn-att-h, .card-actions .btn-del-h { flex: 1 1 0; min-width: 0; }
+        .card-actions .btn-seatfree-h, .card-actions .btn-blk-h { flex: 1 1 0 !important; min-width: 0; }
+        .card-actions .btn-idcard-h { flex: 1 1 100%; width: 100%; }
         .btn-edit-h { background: var(--selected); padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
         .btn-del-h { background: #dc2626; padding: 8px; font-size: 0.7rem; flex: 1; min-width: 60px; }
         .btn-blk-h { padding: 8px; font-size: 0.7rem; min-width: 60px; }
@@ -5719,7 +5723,7 @@
             matches.forEach(w => {
                 const sameShiftWaiting = data.waitingList.filter(x => x.status === 'waiting' && x.shift === w.shift).sort((a,b) => new Date(a.requestedAt) - new Date(b.requestedAt));
                 const position = w.status === 'waiting' ? sameShiftWaiting.findIndex(x => x.id === w.id) + 1 : null;
-                results.push({ adminId: key.slice(prefix.length), entry: w, position, libName: (data.config && data.config.libName) || 'Library' });
+                results.push({ adminId: key.slice(prefix.length), entry: w, position, libName: (data.config && data.config.libName) || 'Library', seatLabels: (data.config && data.config.seatLabels) || [] });
             });
         }
         return results;
@@ -9307,7 +9311,14 @@
         else if (!/^\d{10}$/.test(mob)) { fe('err-csa-app-mobile', 'Please enter a valid 10-digit mobile number'); bad = true; }
         if (bad) return;
         const ref = 'APP' + rawRef;
-        const d = prReadLib(_csa.adminId), r = (d.pendingRegs || []).find(x => x.ref === ref && String(x.mobile) === mob);
+        const d = prReadLib(_csa.adminId), r0 = (d.pendingRegs || []).find(x => x.ref === ref && String(x.mobile) === mob);
+        const r = (function () {
+            if (!r0 || !r0.waitlist || !r0.waitlistId) return r0;
+            const we = (d.waitingList || []).find(w => w.id === r0.waitlistId);
+            if (!we || we.status !== 'allocated') return r0;
+            const sl = (d.config && d.config.seatLabels) || [];
+            return Object.assign({}, r0, { regNo: we.regNo || ('REG' + String(we.id).replace(/^WL/, '')), approvedSeat: we.allocatedSeat, approvedSeatLabel: sl[we.allocatedSeat - 1] || String(we.allocatedSeat) });
+        })();
         // Clear both fields after every valid search so nothing stays typed in; the result stays on screen.
         document.getElementById('csa-app-ref').value = ''; document.getElementById('csa-app-mobile').value = '';
         if (!r) { out.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:9px 11px;font-weight:700;">No application found with these details.</div>'; return; }
@@ -9316,7 +9327,7 @@
         const row = (k, v) => '<tr><td style="padding:4px 0; color:#64748b; width:42%; vertical-align:top;">' + k + '</td><td style="padding:4px 0; font-weight:800; color:#0f172a; word-break:break-word;">' + v + '</td></tr>';
         let head;
         if (r.status === 'pending') head = ['#fffbeb', '#fde68a', '#92400e', '🕓 <b>Awaiting library approval' + (r.waitlist ? ' (Waiting List request)' : '') + '</b>', (r.mode === 'Cash' ? 'Deposit ₹' + E(r.amount) + ' in cash at the library counter.' : 'The library will match your Transaction ID.')];
-        else if (r.status === 'approved' && r.waitlist) head = ['#f0fdf4', '#bbf7d0', '#166534', '✅ <b>Approved — you are on the Waiting List</b>', 'You will be allotted a seat automatically when one is free.' + (r.regNo ? ' Seat allotted — log in with your Registration Number.' : '')];
+        else if (r.status === 'approved' && r.waitlist) head = ['#f0fdf4', '#bbf7d0', '#166534', (r.regNo ? '🎉 <b>Seat allotted</b>' : '✅ <b>Approved — you are on the Waiting List</b>'), (r.regNo ? 'Seat allotted! Log in with your Registration Number and mobile number.' : 'You will be allotted a seat automatically when one is free.')];
         else if (r.status === 'approved') head = ['#f0fdf4', '#bbf7d0', '#166534', '✅ <b>Approved</b>', 'Log in with your Registration Number and mobile number.'];
         else head = ['#fef2f2', '#fecaca', '#991b1b', '❌ <b>Not approved</b>', 'Reason: ' + E(r.decisionReason || '—')];
         out.innerHTML =
@@ -9829,7 +9840,8 @@
             db[entry.shift].push(seatNo);
             students.push(newStudent);
             entry.status = 'allocated';
-            entry.allocatedSeat = seatNo;
+            entry.allocatedSeat = seatNo; entry.regNo = regNo;
+            (pendingRegs || []).filter(pr => pr.waitlistId === entry.id).forEach(pr => { pr.regNo = regNo; pr.approvedSeat = seatNo; pr.approvedSeatLabel = seatLabel(seatNo); });
             entry.allocatedAt = new Date().toISOString();
             logAllocation('AUTO ALLOCATION', entry, seatNo, newStudent.shiftName, trigger, 'Successfully Allocated');
             changed = true;
@@ -10645,10 +10657,10 @@
                     <button class="btn-att-h" onclick='openReportModal(${JSON.stringify(s)})'>Attendance</button>
                     <button class="btn-del-h" onclick="deleteRecord('${s.id}')">🗑️ Delete</button>
                     <span style="flex-basis:100%;height:0;margin-top:-8px;"></span>
-                    <button class="btn-seatfree-h" style="flex:1 1 40%;" ${s.seat ? '' : 'disabled'} onclick="openSeatFreeModal('${s.id}')">${s.seat ? 'Seat Free' : '✔ Seat Freed'}</button>
+                    <button class="btn-seatfree-h" ${s.seat ? '' : 'disabled'} onclick="openSeatFreeModal('${s.id}')">${s.seat ? 'Seat Free' : '✔ Seat Freed'}</button>
                     ${s.isBlocked
-                        ? `<button class="btn-blk-h" style="background:#16a34a;flex:1 1 40%;" onclick="unblockStudentDashboard('${s.id}')">🔓 Unblock Dashboard</button>`
-                        : `<button class="btn-blk-h" style="background:#b45309;flex:1 1 40%;" onclick="openBlockModal('${s.id}')">🔒 Block Dashboard</button>`}
+                        ? `<button class="btn-blk-h" style="background:#16a34a;" onclick="unblockStudentDashboard('${s.id}')">🔓 Unblock Dashboard</button>`
+                        : `<button class="btn-blk-h" style="background:#b45309;" onclick="openBlockModal('${s.id}')">🔒 Block Dashboard</button>`}
                     <span style="flex-basis:100%;height:0;margin-top:-8px;"></span>
                     <button class="btn-idcard-h" onclick="generateIdCard('${s.id}')">🪪 Generate ID Card</button>
                 </div>`;
@@ -14085,11 +14097,12 @@ function subAskAutoRenew(req, cb){
             results = findWaitingEntriesAcrossLibraries(mobile);
         }
         if (!results.length) { resultEl.innerHTML = `<div style="text-align:center; color:var(--grey); font-size:0.82rem; padding:16px 0;">No Waiting List entry found.</div>`; return; }
+        results.sort((a, b) => new Date(b.entry.requestedAt) - new Date(a.entry.requestedAt));
         resultEl.innerHTML = results.map(r => {
             const w = r.entry;
             let statusBadge, statusNote;
             if (w.status === 'waiting') { statusBadge = `<span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:20px; font-size:0.68rem; font-weight:800;">Position #${r.position} · Waiting</span>`; statusNote = `You'll be automatically allocated the next available seat in this shift.`; }
-            else if (w.status === 'allocated') { statusBadge = `<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:20px; font-size:0.68rem; font-weight:800;">🎉 Seat Allocated — ${w.allocatedSeat}</span>`; statusNote = `A seat has been allocated to you! Log in using your new Registration Number (check with the library admin/receipt) to view full details.`; }
+            else if (w.status === 'allocated') { statusBadge = `<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:20px; font-size:0.68rem; font-weight:800;">🎉 Seat Allocated — ${(r.seatLabels && r.seatLabels[w.allocatedSeat - 1]) || w.allocatedSeat}</span>`; statusNote = `A seat has been allocated to you!<br><b style="color:#166534;">Registration No: ${w.regNo || ('REG' + String(w.id).replace(/^WL/, ''))}</b><br>Log in with this Registration Number and your mobile number to view full details.`; }
             else { statusBadge = `<span style="background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:20px; font-size:0.68rem; font-weight:800;">Cancelled</span>`; statusNote = `This Waiting List entry was removed.`; }
             return `<div style="background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px;">
                 <div style="font-weight:800; font-size:0.85rem;">${r.libName}</div>
