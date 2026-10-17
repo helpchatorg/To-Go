@@ -11166,6 +11166,11 @@
             idStep: (idLabel) => `Please keep your ${idLabel} in front of the phone camera so it is clearly visible, and then click the Capture button. After that, I will verify it.`,
             sigStep: (n) => `Last step — signature capture. Please sign on a plain white paper using a black pen, then hold it steady facing the back camera. I will capture it automatically the moment your signature is clearly visible.`,
             sigLooking: '🔍 Looking for your signature…', sigHolding: '✅ Signature found — holding steady, capturing…', sigCaptured: '✅ Signature captured!',
+            sigDoneSpoken: 'Your signature has been captured. You can move ahead now — please tap Next.',
+            idPassedSpoken: 'Your document has been verified. You can move ahead now — please tap Next.',
+            idFailSpoken: (fields, used, left) => `Sorry, your document verification failed${fields ? ': ' + fields + ' did not match' : ''}. That was attempt ${used} of 3. ` + (left === 1 ? 'You have only 1 attempt left, and this is your last attempt. ' : `You have ${left} attempts left. `) + 'Please keep the document clearly in front of the camera and tap Retake to try again.',
+            idAllFailedSpoken: 'Your document verification failed in all 3 attempts, so this Video eKYC could not be completed.',
+            idFieldNames: { 'ID Number': 'the ID number', 'Name': 'the name', 'Date of Birth': 'the date of birth', 'OCR': 'the document text could not be read' },
             idLooking: '📸 Keep your ID clearly in view, then tap Capture', idHolding: '✅ Captured',
             idVerifying: '🔎 Verifying document details…', idVerified: '✅ Document verified successfully!', idFailed: '❌ Document details did not match — please retake.',
             next: 'Next →', cancel: 'Cancel', submit: 'Submit for AI Verification', retake: '↺ Retake', captureNow: '📸 Capture Now',
@@ -11185,6 +11190,11 @@
             idStep: (idLabel, g) => g === 'male' ? `कृपया अपना ${idLabel} फ़ोन के कैमरे के सामने साफ़ दिखाई देने वाले तरीके से रखें और कैप्चर बटन पर क्लिक करें। उसके बाद मैं इसे वेरीफाई करूंगा।` : `कृपया अपना ${idLabel} फ़ोन के कैमरे के सामने साफ़ दिखाई देने वाले तरीके से रखें और कैप्चर बटन पर क्लिक करें। उसके बाद मैं इसे वेरीफाई करूंगी।`,
             sigStep: (n, g) => g === 'male' ? `आखिरी चरण — हस्ताक्षर कैप्चर। कृपया एक सादे सफ़ेद कागज़ पर काले पेन से हस्ताक्षर करें, फिर उसे बैक कैमरे के सामने स्थिर पकड़ें। जैसे ही आपका हस्ताक्षर साफ़ दिखेगा, मैं उसे अपने आप कैप्चर कर लूंगा।` : `आखिरी चरण — हस्ताक्षर कैप्चर। कृपया एक सादे सफ़ेद कागज़ पर काले पेन से हस्ताक्षर करें, फिर उसे बैक कैमरे के सामने स्थिर पकड़ें। जैसे ही आपका हस्ताक्षर साफ़ दिखेगा, मैं उसे अपने आप कैप्चर कर लूंगी।`,
             sigLooking: '🔍 आपका हस्ताक्षर ढूंढा जा रहा है…', sigHolding: '✅ हस्ताक्षर मिल गया — स्थिर पकड़ें, कैप्चर हो रहा है…', sigCaptured: '✅ हस्ताक्षर कैप्चर हो गया!',
+            sigDoneSpoken: 'आपका हस्ताक्षर कैप्चर हो गया है। अब आप आगे बढ़ सकते हैं — कृपया नेक्स्ट दबाएं।',
+            idPassedSpoken: 'आपका दस्तावेज़ वेरीफाई हो गया है। अब आप आगे बढ़ सकते हैं — कृपया नेक्स्ट दबाएं।',
+            idFailSpoken: (fields, used, left) => `क्षमा करें, आपका दस्तावेज़ वेरीफाई नहीं हो पाया${fields ? ': ' + fields + ' मेल नहीं खाया' : ''}। यह तीन में से आपका ${used} नंबर का प्रयास था। ` + (left === 1 ? 'आपके पास सिर्फ़ 1 प्रयास बचा है, और यह आपका आखिरी प्रयास है। ' : `आपके पास ${left} प्रयास बचे हैं। `) + 'कृपया दस्तावेज़ को कैमरे के सामने साफ़ रखें और दोबारा कोशिश के लिए रीटेक दबाएं।',
+            idAllFailedSpoken: 'आपका दस्तावेज़ तीनों प्रयासों में वेरीफाई नहीं हो पाया, इसलिए यह वीडियो ई-केवाईसी पूरा नहीं हो सका।',
+            idFieldNames: { 'ID Number': 'आईडी नंबर', 'Name': 'नाम', 'Date of Birth': 'जन्म तिथि', 'OCR': 'दस्तावेज़ का लिखा हुआ पढ़ा नहीं जा सका' },
             idLooking: '📸 अपना पहचान पत्र साफ़ दिखाएं, फिर कैप्चर दबाएं', idHolding: '✅ कैप्चर हो गया',
             idVerifying: '🔎 दस्तावेज़ का विवरण सत्यापित किया जा रहा है…', idVerified: '✅ दस्तावेज़ सफलतापूर्वक सत्यापित!', idFailed: '❌ दस्तावेज़ का विवरण मेल नहीं खाया — कृपया दोबारा लें।',
             next: 'आगे →', cancel: 'रद्द करें', submit: 'एआई वेरिफिकेशन के लिए सबमिट करें', retake: '↺ दोबारा लें', captureNow: '📸 अभी कैप्चर करें',
@@ -11735,6 +11745,7 @@
         if (statusEl) { statusEl.textContent = VEKYC_I18N[_vekycLang].sigCaptured; statusEl.classList.add('found'); }
         if (manualBtn) manualBtn.style.display = 'none';
         if (nextBtn) nextBtn.disabled = false;
+        vekycAnnounce(VEKYC_I18N[_vekycLang].sigDoneSpoken);
         // Signature captured — the back camera is no longer needed for this session.
         if (_vekycStream) { _vekycStream.getTracks().forEach(t => t.stop()); _vekycStream = null; }
     }
@@ -12003,15 +12014,24 @@
         if (passed) {
             if (statusEl) { statusEl.textContent = t.idVerified; statusEl.classList.add('found'); }
             if (nextBtn) nextBtn.disabled = false;
+            vekycAnnounce(t.idPassedSpoken);
         } else {
             _vekycIdFailCount++;
             if (_vekycIdFailCount >= 3) {
                 videoEkycAutoFail('Government ID document details did not match after 3 attempts.');
+                vekycSpeak(t.idAllFailedSpoken);
                 return;
             }
             if (statusEl) { statusEl.textContent = t.idFailed + (failReason ? ' (' + failReason + ')' : '') + ' (' + _vekycIdFailCount + '/3)'; statusEl.classList.remove('found'); }
             if (manualBtn) manualBtn.style.display = 'none'; // must Retake, not re-submit the same bad frame
+            const _fl = /^Mismatched: /.test(failReason || '') ? failReason.replace('Mismatched: ', '').split(', ').map(f => t.idFieldNames[f] || f).join(_vekycLang === 'hi' ? ', ' : ', ') : ((failReason || '').indexOf('OCR') === 0 ? t.idFieldNames.OCR : '');
+            vekycAnnounce(t.idFailSpoken(_fl, _vekycIdFailCount, 3 - _vekycIdFailCount));
         }
+    }
+    // Shows the assistant's message in the AI bubble AND speaks it, in the language chosen for this eKYC.
+    function vekycAnnounce(text) {
+        const b = document.getElementById('video-ekyc-ai-bubble'); if (b) b.textContent = '🤖 ' + text;
+        vekycSpeak(text);
     }
     // Runs for the entire time the live camera step is open. Any single violation — the
     // person leaving the frame, a second person entering it, or sustained background
@@ -12584,8 +12604,8 @@ function openWalletEkycCooldownModal() {
         const directCharges = (wallet.transactions || []).filter(t => t.isSuperAdminCharge && t.chargeType === 'renewal');
         const CHARGE_ICONS = { maintenance: '🔧', penalty: '⚠️', renewal: '🔄' };
         const CHARGE_LABELS = { maintenance: 'Annual Maintenance Charge', penalty: 'Penalty', renewal: 'Subscription Renewal Charge' };
-        const pastCombined = past.map(rq => ({ date: rq.decidedAt || rq.requestedAt, amount: rq.amount, type: 'renewal', status: rq.status, decisionReason: rq.decisionReason, payMode: rq.payMode, disc: (rq.plan && rq.plan.discPct) ? ('🏷️ ' + rq.plan.discName + ' — ' + rq.plan.discPct + '% off (₹' + rq.plan.listPrice + ' → ₹' + rq.amount + ')') : '', note: (rq.acceptedBy ? 'Accepted by ' + rq.acceptedBy + '. ' : '') + (rq.note || '') }))
-            .concat(subDedupeDirect(wallet, directCharges.map(t => ({ date: t.date, amount: t.amount, type: t.chargeType, status: 'Deducted', decisionReason: null, note: t.note }))))
+        const pastCombined = past.map(rq => ({ date: rq.decidedAt || rq.requestedAt, amount: rq.amount, type: 'renewal', status: rq.status, decisionReason: rq.decisionReason, payMode: rq.payMode, txn: subReqTxn(wallet, rq), disc: (rq.plan && rq.plan.discPct) ? ('🏷️ ' + rq.plan.discName + ' — ' + rq.plan.discPct + '% off (₹' + rq.plan.listPrice + ' → ₹' + rq.amount + ')') : '', note: (rq.acceptedBy ? 'Accepted by ' + rq.acceptedBy + '. ' : '') + (rq.note || '') }))
+            .concat(subDedupeDirect(wallet, directCharges.map(t => ({ date: t.date, amount: t.amount, type: t.chargeType, status: 'Deducted', decisionReason: null, note: t.note, txn: t.id }))))
             .sort((a, b) => new Date(b.date) - new Date(a.date));
         if (pastCombined.length) {
             html += '<div style="font-size:0.8rem;font-weight:800;margin:16px 0 8px;">🧾 Renewal Request History</div>';
@@ -12601,6 +12621,7 @@ function openWalletEkycCooldownModal() {
                         '<div class="content">' +
                             '<div class="title-line"><span class="name">' + (CHARGE_LABELS[rq.type] || 'Charge') + '</span><span class="amt" style="color:#dc2626;">-₹' + rq.amount + '</span></div>' +
                             '<div class="sub-line">' + fmtWalletDate(rq.date) + (rq.note ? ' • ' + rq.note : '') + '</div>' +
+                            (rq.txn ? '<div class="sub-line" style="font-family:monospace;word-break:break-all;">Txn ID: ' + subEsc(rq.txn) + '</div>' : '') +
                             (rq.disc ? '<div class="sub-line" style="color:#15803d;font-weight:800;">' + rq.disc + '</div>' : '') +
                             '<div class="status-line">' + statusHtml + '</div>' +
                             (rq.status === 'Rejected' && rq.decisionReason ? '<div class="reason-line">Reason: ' + rq.decisionReason + '</div>' : '') +
@@ -12630,6 +12651,18 @@ function subResolveTxn(wallet, h){
     let t = all.find(x => x.id === h.txnId);
     if (!t) { const hd = new Date(h.date).getTime(); t = all.filter(x => x.type === 'debit' && x.chargeType === 'renewal' && x.amount == h.amount).sort((a, b) => Math.abs(new Date(a.date) - hd) - Math.abs(new Date(b.date) - hd))[0]; }
     return t ? t.id : (h.txnId || '—');
+}
+function subReqTxn(wallet, rq){
+    if (!rq) return '';
+    if (rq.txnId) return rq.txnId;
+    if (rq.status !== 'Approved') return '';
+    const t0 = new Date(rq.decidedAt || rq.requestedAt).getTime();
+    const all = ((wallet && wallet.archivedTransactions) || []).concat((wallet && wallet.transactions) || []);
+    const near = (arr, d) => arr.map(x => ({ x, d: Math.abs(new Date(d(x)).getTime() - t0) })).filter(o => o.d < 600000).sort((a, b) => a.d - b.d)[0];
+    const c = near(all.filter(x => x.type === 'debit' && x.chargeType === 'renewal' && x.amount == rq.amount), x => x.date);
+    if (c) return c.x.id;
+    const h = near((((wallet && wallet.subscription) || {}).history || []).filter(x => x.amount == rq.amount && x.txnId), x => x.date);
+    return h ? h.x.txnId : '';
 }
 function subAutoText(sub, isAdmin){
     const t = subAutoText0(sub, isAdmin);
@@ -12670,12 +12703,7 @@ function subCardHtml(sub, isAdmin, wallet){
             '<div class="sub-inv-no" style="font-size:0.95rem;font-weight:800;color:#0369a1;font-family:monospace;margin-top:2px;">' + subInvNo(hist[last], last) + '</div>' +
             '<div class="sub-inv-txn" style="font-size:0.66rem;color:#64748b;font-family:monospace;margin-top:2px;word-break:break-all;">Txn ID: ' + subEsc(subResolveTxn(wallet, hist[last])) + '</div>' +
             (hist.length > 1 ? '<label style="display:block;font-size:0.66rem;font-weight:800;color:#64748b;margin:10px 0 4px;">Select an older invoice</label><select onchange="' + upd + '" style="width:100%;padding:9px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.72rem;background:#fff;">' + opts + '</select>' : '<select style="display:none;"><option value="' + last + '" selected></option></select>') +
-            '<button style="width:100%;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:11px;font-size:0.78rem;margin-top:10px;" onclick="subDownloadSelected(this)">⬇️ Download Invoice</button></div>' : '') + subTxnListHtml(sub, wallet) + (isAdmin ? subPolicyHtml() : '');
-}
-function subTxnListHtml(sub, wallet){
-    const hist = (sub && sub.history) || []; if (!hist.length) return '';
-    const rows = hist.map((h, i) => ({ h, i })).reverse().map(x => '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #e0f2fe;font-size:0.66rem;"><div><b>' + subInvNo(x.h, x.i) + '</b> • ' + subEsc(x.h.planName) + '<br><span style="color:#64748b;">' + subFmt(x.h.date) + (x.h.payMode === 'Cash' ? ' • Cash' : ' • Wallet') + '</span></div><div style="text-align:right;"><b>\u20b9' + x.h.amount + '</b><br><span style="font-family:monospace;color:#0369a1;word-break:break-all;">' + subEsc(subResolveTxn(wallet, x.h)) + '</span></div></div>').join('');
-    return '<div style="margin-top:10px;background:#fff;border:1px solid #bae6fd;border-radius:14px;padding:11px 13px;"><div style="font-size:0.62rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Subscription payments \u2014 Wallet Transaction ID</div>' + rows + '</div>';
+            '<button style="width:100%;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:11px;font-size:0.78rem;margin-top:10px;" onclick="subDownloadSelected(this)">⬇️ Download Invoice</button></div>' : '') + (isAdmin ? subPolicyHtml() : '');
 }
 function subDownloadSelected(btn){ subDownloadInvoice(parseInt(btn.parentNode.querySelector('select').value, 10)); }
 function subInvoiceHtml(wallet, libId, h, idx, cfg){
@@ -12950,7 +12978,7 @@ function subAskAutoRenew(req, cb){
         requireWalletUnlock({ title: '🔐 Confirm Payment', desc: 'Verify it\'s you to approve this ₹' + req.amount + ' subscription renewal charge from the Wallet.' }, () => {
             const liveReq = (wallet.chargeRequests || []).find(r => r.id === reqId && r.status === 'Pending');
             if (!liveReq) { refreshAllWalletDisplays(); return; }
-            const txnId = generateWalletTxnId();
+            const txnId = generateWalletTxnId(); liveReq.txnId = txnId;
             wallet.balance = (wallet.balance || 0) - liveReq.amount;
             wallet.transactions = wallet.transactions || [];
             wallet.transactions.push({ id: txnId, type: 'debit', chargeType: 'renewal', amount: liveReq.amount, balanceAfter: wallet.balance, date: new Date().toISOString(), note: liveReq.note || '', by: 'Super Admin', isSuperAdminCharge: true });
