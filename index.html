@@ -2663,8 +2663,8 @@
             </div>
             <div class="vekyc-sig-instructions" id="video-ekyc-id-instructions" style="display:none;">
                 <div class="r"><span class="ic">🪪</span><span>Hold up your <strong>Government ID document</strong> clearly, filling most of the frame.</span></div>
-                <div class="r"><span class="ic">📷</span><span>The back camera opens automatically — keep it flat, steady and well-lit.</span></div>
-                <div class="r"><span class="ic">🤖</span><span>The AI captures and verifies it automatically once it's clearly in view.</span></div>
+                <div class="r"><span class="ic">📷</span><span>Keep your document flat, steady and well-lit — the camera opens automatically.</span></div>
+                <div class="r"><span class="ic">📸</span><span>Tap the <strong>Capture</strong> button yourself. The AI verifies the document only after you capture it.</span></div>
             </div>
             <div class="vekyc-sig-instructions" id="video-ekyc-sig-instructions" style="display:none;">
                 <div class="r"><span class="ic">📝</span><span>Sign on a plain <strong>white paper</strong> using a <strong>black pen</strong> only.</span></div>
@@ -2702,7 +2702,7 @@
                     <img id="video-ekyc-id-preview" alt="Captured ID document">
                     <button type="button" onclick="retakeVideoEkycId()" class="vekyc-sig-retake-btn">↺ Retake</button>
                 </div>
-                <button type="button" onclick="captureVideoEkycIdNow()" id="video-ekyc-id-manual-btn" style="width:100%; background:#eef2ff; color:#4338ca; font-weight:800; font-size:0.78rem; padding:10px; margin-top:2px;">📸 Capture Now</button>
+                <button type="button" onclick="captureVideoEkycIdNow()" id="video-ekyc-id-manual-btn" style="width:100%; background:#2563eb; color:#fff; font-weight:800; font-size:0.9rem; padding:13px; margin-top:6px; border-radius:12px;">📸 Capture Now</button>
             </div>
             <div id="video-ekyc-signature-row" style="display:none;">
                 <div class="vekyc-sig-status" id="video-ekyc-sig-status">🔍 Looking for your signature…</div>
@@ -9219,6 +9219,8 @@
         });
         document.getElementById('pr-full').style.display = anyFree ? 'none' : 'block';
         document.getElementById('pr-submit').style.display = anyFree ? 'block' : 'none';
+        // Waiting List is offered only when the selected shift is completely full
+        ['pr-wl-btn', 'pr-wl-note'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = anyFree ? 'none' : ''; });
     }
     function prSubmit() {
         document.querySelectorAll('#pr-step2 .error-msg').forEach(e => e.style.display = 'none');
@@ -9281,6 +9283,8 @@
         prFresh();
         const c = _pr.config, sh = c.shifts.find(x => x.id === _pr.shiftId), mobile = document.getElementById('pr-mobile').value.trim();
         const d = prReadLib(_pr.adminId), wl = d.waitingList || [];
+        const _tot = (c.seatGroups && c.seatGroups.length) ? c.seatGroups.reduce((a, g) => a + g.capacity, 0) : c.totalSeats;
+        if (prBusy(sh).size < _tot) { alert('Seats are available for this shift now. Please pick a seat and submit your application instead of joining the Waiting List.'); prRenderGrid(); return; }
         if (_pr.students.some(st => String(st.mobile) === mobile && st.shift === sh.id)) { alert('This mobile number is already registered for this shift.'); return; }
         if (wl.some(w => w.status === 'waiting' && String(w.mobile) === mobile && w.shift === sh.id)) { alert('This mobile number is already on the Waiting List for this shift. Use "Waiting List" on the login page to check your position.'); return; }
         const dupe = _pr.pending.find(r => r.mobile === mobile);
@@ -11159,10 +11163,10 @@
             rule4: "Do not minimize the app or switch to another app. If you do, the video will stop and the eKYC will fail.",
             readyLine: "Alright, let's get started.",
             codeStep: "Next, a unique verification code is shown on your screen. Please read it and type it below to confirm this is a live session.",
-            idStep: (idLabel) => `Now, please hold up your ${idLabel} clearly in front of the back camera. I will capture and verify it automatically.`,
+            idStep: (idLabel) => `Please keep your ${idLabel} in front of the phone camera so it is clearly visible, and then click the Capture button. After that, I will verify it.`,
             sigStep: (n) => `Last step — signature capture. Please sign on a plain white paper using a black pen, then hold it steady facing the back camera. I will capture it automatically the moment your signature is clearly visible.`,
             sigLooking: '🔍 Looking for your signature…', sigHolding: '✅ Signature found — holding steady, capturing…', sigCaptured: '✅ Signature captured!',
-            idLooking: '🔍 Looking for your ID document…', idHolding: '✅ Document found — holding steady, capturing…',
+            idLooking: '📸 Keep your ID clearly in view, then tap Capture', idHolding: '✅ Captured',
             idVerifying: '🔎 Verifying document details…', idVerified: '✅ Document verified successfully!', idFailed: '❌ Document details did not match — please retake.',
             next: 'Next →', cancel: 'Cancel', submit: 'Submit for AI Verification', retake: '↺ Retake', captureNow: '📸 Capture Now',
             startBtn: 'Start Video eKYC →', chooseLang: 'Choose Language', chooseAssistant: 'Choose your AI Assistant',
@@ -11178,10 +11182,10 @@
             rule4: "कृपया ऐप को मिनिमाइज़ न करें और दूसरे ऐप पर न जाएं। ऐसा करने पर वीडियो बंद हो जाएगा और ईकेवाईसी फेल हो जाएगी।",
             readyLine: "ठीक है, चलिए शुरू करते हैं।",
             codeStep: "अब, आपकी स्क्रीन पर एक यूनिक वेरिफिकेशन कोड दिखेगा। कृपया उसे पढ़ें और नीचे टाइप करें, ताकि यह कन्फर्म हो सके कि यह एक लाइव सेशन है।",
-            idStep: (idLabel) => `अब कृपया अपना ${idLabel} बैक कैमरे के सामने साफ़ दिखाएं। मैं इसे अपने आप कैप्चर करके वेरीफाई करूंगी।`,
+            idStep: (idLabel, g) => g === 'male' ? `कृपया अपना ${idLabel} फ़ोन के कैमरे के सामने साफ़ दिखाई देने वाले तरीके से रखें और कैप्चर बटन पर क्लिक करें। उसके बाद मैं इसे वेरीफाई करूंगा।` : `कृपया अपना ${idLabel} फ़ोन के कैमरे के सामने साफ़ दिखाई देने वाले तरीके से रखें और कैप्चर बटन पर क्लिक करें। उसके बाद मैं इसे वेरीफाई करूंगी।`,
             sigStep: (n, g) => g === 'male' ? `आखिरी चरण — हस्ताक्षर कैप्चर। कृपया एक सादे सफ़ेद कागज़ पर काले पेन से हस्ताक्षर करें, फिर उसे बैक कैमरे के सामने स्थिर पकड़ें। जैसे ही आपका हस्ताक्षर साफ़ दिखेगा, मैं उसे अपने आप कैप्चर कर लूंगा।` : `आखिरी चरण — हस्ताक्षर कैप्चर। कृपया एक सादे सफ़ेद कागज़ पर काले पेन से हस्ताक्षर करें, फिर उसे बैक कैमरे के सामने स्थिर पकड़ें। जैसे ही आपका हस्ताक्षर साफ़ दिखेगा, मैं उसे अपने आप कैप्चर कर लूंगी।`,
             sigLooking: '🔍 आपका हस्ताक्षर ढूंढा जा रहा है…', sigHolding: '✅ हस्ताक्षर मिल गया — स्थिर पकड़ें, कैप्चर हो रहा है…', sigCaptured: '✅ हस्ताक्षर कैप्चर हो गया!',
-            idLooking: '🔍 आपका पहचान पत्र ढूंढा जा रहा है…', idHolding: '✅ दस्तावेज़ मिल गया — स्थिर पकड़ें, कैप्चर हो रहा है…',
+            idLooking: '📸 अपना पहचान पत्र साफ़ दिखाएं, फिर कैप्चर दबाएं', idHolding: '✅ कैप्चर हो गया',
             idVerifying: '🔎 दस्तावेज़ का विवरण सत्यापित किया जा रहा है…', idVerified: '✅ दस्तावेज़ सफलतापूर्वक सत्यापित!', idFailed: '❌ दस्तावेज़ का विवरण मेल नहीं खाया — कृपया दोबारा लें।',
             next: 'आगे →', cancel: 'रद्द करें', submit: 'एआई वेरिफिकेशन के लिए सबमिट करें', retake: '↺ दोबारा लें', captureNow: '📸 अभी कैप्चर करें',
             startBtn: 'वीडियो ईकेवाईसी शुरू करें →', chooseLang: 'भाषा चुनें', chooseAssistant: 'अपना एआई सहायक चुनें',
@@ -11196,8 +11200,8 @@
         'Keep your surroundings quiet — background noise or other voices will fail eKYC.': 'आस-पास शांति रखें — बैकग्राउंड शोर या दूसरी आवाज़ से eKYC फेल हो जाएगी।',
         'Do not minimize the app or switch to another app — the video will stop and eKYC will fail.': 'ऐप को मिनिमाइज़ न करें और दूसरे ऐप पर न जाएं — वीडियो बंद हो जाएगा और eKYC फेल हो जाएगी।',
         'Hold up your <strong>Government ID document</strong> clearly, filling most of the frame.': 'अपना <strong>सरकारी पहचान पत्र</strong> साफ़ दिखाएं, ताकि वह फ्रेम का ज़्यादातर हिस्सा भर दे।',
-        'The back camera opens automatically — keep it flat, steady and well-lit.': 'बैक कैमरा अपने-आप खुलेगा — दस्तावेज़ को सीधा, स्थिर और अच्छी रोशनी में रखें।',
-        "The AI captures and verifies it automatically once it's clearly in view.": 'जैसे ही यह साफ़ दिखेगा, एआई अपने-आप इसे कैप्चर और वेरिफाई कर लेगा।',
+        'Keep your document flat, steady and well-lit — the camera opens automatically.': 'बैक कैमरा अपने-आप खुलेगा — दस्तावेज़ को सीधा, स्थिर और अच्छी रोशनी में रखें।',
+        'Tap the <strong>Capture</strong> button yourself. The AI verifies the document only after you capture it.': 'कैप्चर बटन पर <strong>खुद क्लिक</strong> करें। कैप्चर के बाद ही एआई दस्तावेज़ को वेरिफाई करेगा।',
         'Sign on a plain <strong>white paper</strong> using a <strong>black pen</strong> only.': 'सादे <strong>सफ़ेद कागज़</strong> पर सिर्फ़ <strong>काले पेन</strong> से हस्ताक्षर करें।',
         'The back camera opens automatically — hold the paper flat, steady and well-lit.': 'बैक कैमरा अपने-आप खुलेगा — कागज़ को सीधा, स्थिर और अच्छी रोशनी में पकड़ें।',
         'The AI captures the correct frame automatically the instant your signature is clearly visible.': 'हस्ताक्षर साफ़ दिखते ही एआई सही फ्रेम अपने-आप कैप्चर कर लेगा।',
@@ -11784,8 +11788,7 @@
         const statusEl = document.getElementById('video-ekyc-id-status');
         if (statusEl) statusEl.classList.remove('found');
         switchVideoEkycToBackCamera(() => {
-            if (statusEl) statusEl.textContent = VEKYC_I18N[_vekycLang].idLooking;
-            startVideoEkycIdDetection();
+            if (statusEl) statusEl.textContent = VEKYC_I18N[_vekycLang].idLooking; // manual capture only — no auto-capture
         });
     }
     function startVideoEkycIdDetection() {
@@ -11866,8 +11869,7 @@
         const statusEl = document.getElementById('video-ekyc-id-status');
         if (statusEl) statusEl.classList.remove('found');
         switchVideoEkycToBackCamera(() => {
-            if (statusEl) statusEl.textContent = VEKYC_I18N[_vekycLang].idLooking;
-            startVideoEkycIdDetection();
+            if (statusEl) statusEl.textContent = VEKYC_I18N[_vekycLang].idLooking; // manual capture only — no auto-capture
         });
     }
     // ----- On-device OCR verification: loads Tesseract.js on demand (same pattern as jsPDF/
@@ -12121,7 +12123,7 @@
         } else if (isIdStep) {
             const d = wallet.setup.details || {};
             const idLabel = d.idType || 'Government ID';
-            const idStepText = t.idStep(idLabel);
+            const idStepText = t.idStep(idLabel, _vekycAiGender);
             document.getElementById('video-ekyc-ai-bubble').textContent = '🤖 ' + idStepText;
             if (answerRow) answerRow.style.display = 'none';
             if (codeRow) codeRow.style.display = 'none';
@@ -12668,7 +12670,12 @@ function subCardHtml(sub, isAdmin, wallet){
             '<div class="sub-inv-no" style="font-size:0.95rem;font-weight:800;color:#0369a1;font-family:monospace;margin-top:2px;">' + subInvNo(hist[last], last) + '</div>' +
             '<div class="sub-inv-txn" style="font-size:0.66rem;color:#64748b;font-family:monospace;margin-top:2px;word-break:break-all;">Txn ID: ' + subEsc(subResolveTxn(wallet, hist[last])) + '</div>' +
             (hist.length > 1 ? '<label style="display:block;font-size:0.66rem;font-weight:800;color:#64748b;margin:10px 0 4px;">Select an older invoice</label><select onchange="' + upd + '" style="width:100%;padding:9px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.72rem;background:#fff;">' + opts + '</select>' : '<select style="display:none;"><option value="' + last + '" selected></option></select>') +
-            '<button style="width:100%;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:11px;font-size:0.78rem;margin-top:10px;" onclick="subDownloadSelected(this)">⬇️ Download Invoice</button></div>' : '') + (isAdmin ? subPolicyHtml() : '');
+            '<button style="width:100%;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:11px;font-size:0.78rem;margin-top:10px;" onclick="subDownloadSelected(this)">⬇️ Download Invoice</button></div>' : '') + subTxnListHtml(sub, wallet) + (isAdmin ? subPolicyHtml() : '');
+}
+function subTxnListHtml(sub, wallet){
+    const hist = (sub && sub.history) || []; if (!hist.length) return '';
+    const rows = hist.map((h, i) => ({ h, i })).reverse().map(x => '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #e0f2fe;font-size:0.66rem;"><div><b>' + subInvNo(x.h, x.i) + '</b> • ' + subEsc(x.h.planName) + '<br><span style="color:#64748b;">' + subFmt(x.h.date) + (x.h.payMode === 'Cash' ? ' • Cash' : ' • Wallet') + '</span></div><div style="text-align:right;"><b>\u20b9' + x.h.amount + '</b><br><span style="font-family:monospace;color:#0369a1;word-break:break-all;">' + subEsc(subResolveTxn(wallet, x.h)) + '</span></div></div>').join('');
+    return '<div style="margin-top:10px;background:#fff;border:1px solid #bae6fd;border-radius:14px;padding:11px 13px;"><div style="font-size:0.62rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Subscription payments \u2014 Wallet Transaction ID</div>' + rows + '</div>';
 }
 function subDownloadSelected(btn){ subDownloadInvoice(parseInt(btn.parentNode.querySelector('select').value, 10)); }
 function subInvoiceHtml(wallet, libId, h, idx, cfg){
